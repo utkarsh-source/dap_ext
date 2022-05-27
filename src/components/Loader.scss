@@ -1,0 +1,17 @@
+@import "../styles/variables";
+@import "../styles/utilities";
+
+.loader__wrapper {
+  border-radius: 5px;
+  box-shadow: 0 0 1rem rgba(black, 0.1);
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: $zindex;
+  padding: 25px;
+}

@@ -1,0 +1,20 @@
+{
+  "name": "DAP",
+  "description": "DIGITAL ADOPTION PLATFORM",
+  "version": "1.1",
+  "manifest_version": 3,
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "options_page": "options.html",
+  "icons": {
+    "128": "icon128.png"
+  },
+  "action": {},
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; script-src-elem 'self'"
+  },
+  "host_permissions": ["<all_urls>"],
+  "permissions": ["tabs", "scripting", "storage", "webNavigation"]
+}

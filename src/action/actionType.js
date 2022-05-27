@@ -1,0 +1,23 @@
+export const CREATE__FLOW__REQUEST = "CREATE__FLOW__REQUEST";
+export const CREATE__FLOW__SUCCESS = "CREATE__FLOW__SUCCESS";
+export const CREATE__FLOW__FAIL = "CREATE__FLOW__FAIL";
+
+export const TOKEN__REQUEST = "TOKEN__REQUEST";
+export const TOKEN__SUCCESS = "TOKEN__SUCCESS";
+export const TOKEN__FAIL = "TOKEN__FAIL";
+
+export const DELETE__FLOW__REQUEST = "DELETE__FLOW__REQUEST";
+export const DELETE__FLOW__SUCCESS = "DELETE__FLOW__SUCCESS";
+export const DELETE__FLOW__FAIL = "DELETE__FLOW__FAIL";
+
+export const VIEW__FLOWS__REQUEST = "VIEW__FLOWS__REQUEST";
+export const VIEW__FLOWS__SUCCESS = "VIEW__FLOWS__SUCCESS";
+export const VIEW__FLOWS__FAIL = "VIEW__FLOWS__FAIL";
+
+export const LOGIN_REQUEST = "LOGIN_REQUEST";
+export const LOGIN_SUCCESS = "LOGIN_SUCCESS";
+export const LOGIN_FAIL = "LOGIN_FAIL";
+
+export const LOGOUT_REQUEST = "LOGOUT_REQUEST";
+export const LOGOUT_SUCCESS = "LOGOUT_SUCCESS";
+export const LOGOUT_FAIL = "LOGOUT_FAIL";
