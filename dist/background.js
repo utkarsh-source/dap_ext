@@ -1,70 +1,78 @@
+chrome.runtime.onConnect.addListener(function (port) {
+  port.onMessage.addListener(function (msg) {
+    switch (msg.type) {
+      case "newTab": {
+        chrome.tabs.create({
+          url: request.url,
+        });
+        break;
+      }
+      case "unloadExtension": {
+        console.log("Listeners removed");
+        chrome.tabs.onActivated.removeListener(onActiveChange);
+        removeListeners();
+        break;
+      }
+    }
+  });
+});
+
 function removeListeners() {
-  chrome.runtime.onMessage.removeListener(onMessage);
   chrome.tabs.onRemoved.removeListener(onTabRemove);
-  chrome.webNavigation.onDOMContentLoaded.removeListener(onDOMContentLoaded);
+  chrome.tabs.onUpdated.removeListener(onTabUpdate);
 }
 
 function addListeners() {
-  chrome.runtime.onMessage.addListener(onMessage);
   chrome.tabs.onRemoved.addListener(onTabRemove);
-  chrome.webNavigation.onDOMContentLoaded.addListener(onDOMContentLoaded);
+  chrome.tabs.onUpdated.addListener(onTabUpdate);
 }
 
-function onDOMContentLoaded(details) {
-  const { tabId, url } = details;
-  chrome.storage.sync.get(["tabUrl"], function (data) {
-    if (!url.includes("http")) return;
-    let tabUrlDomain = data.tabUrl.split("/")[2].split(".").slice(-2)[0];
-    let newUrlDomain = url.split("/")[2].split(".").slice(-2)[0];
-    if (tabUrlDomain !== newUrlDomain) return;
-    chrome.scripting.executeScript(
-      {
+function onTabUpdate(tabId, changeInfo, tab) {
+  const { status, url } = changeInfo;
+  if (status !== "complete") return;
+  chrome.scripting.executeScript(
+    {
+      target: { tabId },
+      files: ["inject_script.js"],
+    },
+    () => {
+      chrome.scripting.executeScript({
         target: { tabId },
-        files: ["inject_script.js"],
-      },
-      () => {
-        chrome.scripting.executeScript({
-          target: { tabId },
-          files: ["foreground.bundle.js"],
-        });
-      }
-    );
-  });
+        files: ["foreground.bundle.js"],
+      });
+    }
+  );
 }
 
 function onTabRemove() {
   chrome.storage.sync.clear();
+  chrome.tabs.onActivated.removeListener(onActiveChange);
   removeListeners();
 }
 
-function onMessage(request, sender, sendResponse) {
-  if (request.closeExt) {
-    chrome.storage.sync.clear();
-    chrome.tabs.query({ active: true }, (tab) => {
-      chrome.scripting.executeScript(
-        {
-          target: { tabId: tab[0].id },
-          files: ["remove_script.js"],
-        },
-        () => {
-          sendResponse("Extension Closed");
-          removeListeners();
-        }
-      );
-    });
-  } else if (request.openNewTab?.value) {
-    chrome.tabs.create({
-      url: request.openNewTab.url,
-    });
-  }
-}
+// function onMessage(request, sender, sendResponse) {
+//   switch (request.type) {
+//     case "newTab": {
+//       chrome.tabs.create(
+//         {
+//           url: request.url,
+//         },
+//         () => sendResponse("Created")
+//       );
+//       break;
+//     }
+//   }
+// }
 
 function onExtensionClick(tab) {
-  chrome.storage.sync.clear(function () {
-    addListeners();
-    chrome.storage.sync.set({ tabUrl: tab.url });
-  });
+  chrome.tabs.onActivated.removeListener(onActiveChange);
+  removeListeners();
   if (tab.url.includes("http") && tab.status == "complete") {
+    chrome.storage.sync.clear(function () {
+      addListeners();
+      chrome.tabs.onActivated.addListener(onActiveChange);
+      chrome.storage.sync.set({ tabUrl: tab.url, tabId: tab.id });
+    });
     chrome.scripting.executeScript(
       {
         target: { tabId: tab.id },
@@ -78,6 +86,16 @@ function onExtensionClick(tab) {
       }
     );
   }
+}
+
+function onActiveChange({ tabId }) {
+  chrome.storage.sync.get(["tabId"], function (data) {
+    if (data.tabId === tabId) {
+      addListeners();
+    } else {
+      removeListeners();
+    }
+  });
 }
 
 chrome.action.onClicked.addListener(onExtensionClick);

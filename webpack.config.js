@@ -46,8 +46,6 @@ module.exports = {
           "style-loader",
           // Translates CSS into CommonJS
           "css-loader",
-          // Compiles Sass to CSS
-          "sass-loader",
         ],
       },
     ],
@@ -73,7 +71,6 @@ module.exports = {
         { from: "src/manifest.json", to: "[name][ext]" },
         { from: "src/background.js", to: "[name][ext]" },
         { from: "src/inject_script.js", to: "[name][ext]" },
-        { from: "src/remove_script.js", to: "[name][ext]" },
         { from: "src/icon128.png", to: "[name][ext]" },
       ],
     }),

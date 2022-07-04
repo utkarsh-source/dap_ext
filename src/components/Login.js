@@ -3,7 +3,17 @@ import { AppContext } from "../../AppContext";
 import { login } from "../action/action";
 import { MdEmail } from "react-icons/md";
 import { RiLockPasswordLine } from "react-icons/ri";
-import "./Login.scss";
+import {
+  Button,
+  ButtonWrapper,
+  FormBox,
+  FormHeading,
+  Icon,
+  Input,
+  InputBox,
+  PopupWrapper,
+  Ruler,
+} from "../styled-component";
 
 function Login() {
   const [input, setInput] = useState("");
@@ -13,62 +23,56 @@ function Login() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    chrome.storage.sync.set({ tabInfo: { url: window.location.href } });
-    login(dispatch, { email: input, password });
+    // chrome.storage.sync.set({ tabInfo: { url: window.location.href } });
+    const full_domain = input.split("@")[1].split(".");
+    const full_domain_length = full_domain.length;
+    const main_domain = full_domain[full_domain_length - 2];
+    login(dispatch, main_domain, { email: input, password });
   };
 
   const handleClose = () => {
-    chrome.runtime
-      .sendMessage({ closeExt: true })
-      .then((res) => console.log(res))
-      .catch((err) => {});
+    let port = chrome.runtime.connect({ name: "content_script" });
+    port.postMessage({ type: "unloadExtension" });
+    window.location.reload();
   };
 
-  useEffect(() => {
-    document.body.style.pointerEvents = "none";
-    return () => {
-      document.body.style.pointerEvents = "auto";
-    };
-  }, []);
-
   return (
-    <form className="extension__login__form" onSubmit={handleSubmit}>
-      <h1 className="title">Sign In</h1>
-      <div className="input__wrapper">
-        <div>
-          <MdEmail className="input__icon" />
-          <input
+    <PopupWrapper toggle={true}>
+      <FormBox toggle={true} onSubmit={handleSubmit}>
+        <FormHeading>Sign In</FormHeading>
+        <InputBox>
+          <Icon as={MdEmail} />
+          <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             name="email"
             placeholder="Email..."
             type="email"
             required
-          ></input>
-        </div>
-      </div>
-      <div className="input__wrapper">
-        <div>
-          <RiLockPasswordLine className="input__icon" />
-          <input
+          ></Input>
+        </InputBox>
+        <InputBox>
+          <Icon as={RiLockPasswordLine} />
+          <Input
             value={password}
             onChange={(e) => setPass(e.target.value)}
             name="password"
             placeholder="Password..."
             type="password"
             required
-          ></input>
-        </div>
-      </div>
-      <div className="login__btn__wrapper">
-        <button type="button" onClick={handleClose} className="close__button">
-          Close
-        </button>
-        <button type="submit" className="login__button">
-          Login
-        </button>
-      </div>
-    </form>
+          ></Input>
+        </InputBox>
+        <Ruler />
+        <ButtonWrapper>
+          <Button type="button" onClick={handleClose}>
+            Close
+          </Button>
+          <Button primary type="submit">
+            Login
+          </Button>
+        </ButtonWrapper>
+      </FormBox>
+    </PopupWrapper>
   );
 }
 

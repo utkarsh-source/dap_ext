@@ -1,25 +1,40 @@
 import React, { useState, useContext } from "react";
 import { CgClose } from "react-icons/cg";
-import { BsFillInfoCircleFill } from "react-icons/bs";
-import "./Tooltip.scss";
+import { AiOutlineInfoCircle } from "react-icons/ai";
 import { AppContext } from "../../AppContext";
 import toast from "react-hot-toast";
+import { FaAngleRight } from "react-icons/fa";
+import { getFlowData } from "../helper/flowData";
+import {
+  Button,
+  ButtonRounded,
+  ButtonWrapper,
+  PopupWrapper,
+  PreviewTooltip,
+  TooltipBox,
+} from "../styled-component";
+import { GoTriangleLeft, GoTriangleRight } from "react-icons/go";
 
-function Tooltip(props) {
+const Tooltip = (props) => {
   const {
     targetElem,
-    previewMode,
+    setTogglePreviewMode,
     top,
     left,
+    relX,
+    relY,
     flowName,
     setTooltip,
     flowData,
     stepsCount,
     translateY,
+    translateX,
+    applicationName,
+    setProgress,
+    enableClick,
     setInit,
-    title,
-    taskMessage,
-    previewStepCount,
+    removeScrollListener,
+    children,
   } = props;
 
   const [data, setData] = useState({
@@ -34,14 +49,31 @@ function Tooltip(props) {
     },
   } = useContext(AppContext);
 
+  const submitData = () => {
+    removeScrollListener();
+    setTogglePreviewMode(false);
+    chrome.storage.sync.remove([
+      "flowData",
+      "flowName",
+      "stepsCount",
+      "previewStepCount",
+      "applicationName",
+    ]);
+    setTooltip({ value: false });
+    const data = getFlowData(flowData.current, flowName, applicationName);
+    createFlow(dispatch, data, token, setProgress);
+  };
+
   const handleNextStep = (e) => {
     if (!data.title || !data.message) {
       toast.error("No fields can be empty!");
       return;
     }
+    removeScrollListener();
+    enableClick();
     stepsCount.current++;
+    setInit(true);
     setTooltip({ value: false });
-    setInit({ forAll: true, forTooltip: true });
     flowData.current[flowName] = {
       ...flowData.current[flowName],
       ["step" + stepsCount.current]: {
@@ -49,75 +81,61 @@ function Tooltip(props) {
         message: data.message,
         targetElement: targetElem.current,
         targetUrl: window.location.href,
+        targetClickOffsetX: relX,
+        targetClickOffsetY: relY,
       },
     };
   };
 
   const handleDismisTooltip = () => {
-    setInit({ forAll: true, forTooltip: true });
+    enableClick();
+    setInit(true);
     setTooltip({ value: false });
     targetElem.current = null;
+    removeScrollListener();
   };
 
   return (
-    <div
-      style={{
-        top: top + "px",
-        left: left + "px",
-        transform: `translateY(${translateY}%)`,
-      }}
-      className="main__tooltip"
-    >
-      {previewMode.current ? (
-        <div className="preview__mode__wrapper">
-          <div className="preview__badge">{previewStepCount.current.value}</div>
-          <h2 className="preview__title">{title}</h2>
-          <p className="preview__desc">{taskMessage}</p>
-        </div>
-      ) : (
-        <>
-          <div className="title__bar">
-            <BsFillInfoCircleFill className="show__icon" />
-            {previewMode.current ? (
-              <h2>{title}</h2>
-            ) : (
-              <input
-                placeholder="Title"
-                value={data.title}
-                onChange={(e) =>
-                  setData((prev) => ({ ...prev, title: e.target.value }))
-                }
-                type="text"
-                className="title"
-              ></input>
-            )}
-            {!previewMode.current && (
-              <CgClose
-                onClick={handleDismisTooltip}
-                className="tooltip__close__btn"
-              />
-            )}
-          </div>
-          <div className="main__tooltip__box">
-            <input
-              placeholder="Description..."
-              value={data.message}
-              onChange={(e) =>
-                setData((prev) => ({ ...prev, message: e.target.value }))
-              }
-              type="text"
-              className="desc"
-            ></input>
-
-            <button onClick={handleNextStep} className="ext__tooltip__btn">
-              Next
-            </button>
-          </div>
-        </>
-      )}
-      {props.children}
-    </div>
+    <PopupWrapper toggle={true}>
+      <TooltipBox
+        style={{
+          top: top + "px",
+          left: left + "px",
+          transform: `translate(${translateX}%, ${translateY}%)`,
+        }}
+      >
+        <ButtonRounded
+          style={{ position: "absolute", top: "15px", right: "15px" }}
+          as={CgClose}
+          onClick={handleDismisTooltip}
+        />
+        <input
+          placeholder="Title"
+          value={data.title}
+          onChange={(e) =>
+            setData((prev) => ({ ...prev, title: e.target.value }))
+          }
+          type="text"
+        />
+        <textarea
+          value={data.message}
+          placeholder="Description..."
+          onChange={(e) =>
+            setData((prev) => ({ ...prev, message: e.target.value }))
+          }
+        />
+        <ButtonWrapper>
+          <Button primary onClick={submitData}>
+            Done
+          </Button>
+          <Button onClick={handleNextStep}>
+            Next <FaAngleRight />
+          </Button>
+        </ButtonWrapper>
+        {children}
+      </TooltipBox>
+    </PopupWrapper>
   );
-}
+};
 
 export default Tooltip;

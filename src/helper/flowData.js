@@ -9,6 +9,8 @@ export const getFlowData = (data, flowName, applicationName) => {
       htmlTag: data[flowName][key].targetElement.tagName,
       xPath: data[flowName][key].targetElement.xPath,
       targetURL: data[flowName][key].targetUrl,
+      targetClickOffsetX: data[flowName][key].targetClickOffsetX,
+      targetClickOffsetY: data[flowName][key].targetClickOffsetY,
     });
   }
 

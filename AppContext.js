@@ -17,6 +17,12 @@ import {
   TOKEN__REQUEST,
   TOKEN__SUCCESS,
   TOKEN__FAIL,
+  VIEW__FEEDBACK__REQUEST,
+  VIEW__FEEDBACK__SUCCESS,
+  VIEW__FEEDBACK__FAIL,
+  ANNOUNCEMENT_BY_USER_REQUEST,
+  ANNOUNCEMENT_BY_USER_SUCCESS,
+  ANNOUNCEMENT_BY_USER_FAIL,
 } from "./src/action/actionType";
 const AppContext = createContext({});
 
@@ -26,9 +32,17 @@ const initialState = {
     auth: false,
     token: null,
     typeOfUser: null,
-    isLoading: true,
+    databaseID: null,
   },
   flows: {
+    data: [],
+    isLoading: false,
+  },
+  feedback: {
+    data: [],
+    isLoading: false,
+  },
+  annoucement: {
     data: [],
     isLoading: false,
   },
@@ -45,19 +59,20 @@ const reducer = (state, { type, payload }) => {
       return { ...state, isLoading: false };
 
     case TOKEN__REQUEST:
-      return { ...state, login: { ...state.login, isLoading: true } };
+      return { ...state, isLoading: true };
     case TOKEN__SUCCESS:
       return {
         ...state,
+        isLoading: false,
         login: {
           auth: payload.auth,
           typeOfUser: payload.typeOfUser,
           token: payload.token,
-          isLoading: false,
+          databaseID: payload.databaseID,
         },
       };
     case TOKEN__FAIL:
-      return { ...state, login: { ...state.login, isLoading: false } };
+      return { ...state, isLoading: false };
 
     case DELETE__FLOW__FAIL:
       return { ...state, isLoading: true };
@@ -76,6 +91,32 @@ const reducer = (state, { type, payload }) => {
     case VIEW__FLOWS__FAIL:
       return { ...state, flows: { ...state.flows, isLoading: false } };
 
+    case ANNOUNCEMENT_BY_USER_REQUEST:
+      return {
+        ...state,
+        annoucement: { ...state.annoucement, isLoading: true },
+      };
+    case ANNOUNCEMENT_BY_USER_SUCCESS:
+      return {
+        ...state,
+        annoucement: { ...state.annoucement, data: payload, isLoading: false },
+      };
+    case ANNOUNCEMENT_BY_USER_FAIL:
+      return {
+        ...state,
+        annoucement: { ...state.annoucement, isLoading: false },
+      };
+
+    case VIEW__FEEDBACK__REQUEST:
+      return { ...state, feedback: { ...state.feedback, isLoading: true } };
+    case VIEW__FEEDBACK__SUCCESS:
+      return {
+        ...state,
+        feedback: { ...state.feedback, data: payload, isLoading: false },
+      };
+    case VIEW__FEEDBACK__FAIL:
+      return { ...state, feedback: { ...state.feedback, isLoading: false } };
+
     case LOGIN_REQUEST:
       return { ...state, isLoading: true };
     case LOGIN_SUCCESS:
@@ -86,6 +127,7 @@ const reducer = (state, { type, payload }) => {
           auth: payload.auth,
           typeOfUser: payload.typeOfUser,
           token: payload.token,
+          databaseID: payload.databaseID,
         },
       };
     case LOGIN_FAIL:
@@ -116,7 +158,16 @@ const AppContextProvider = ({ children }) => {
 
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  const value = { state, dispatch, toggleForm, setFormToggle };
+  const [previewMode, setTogglePreviewMode] = useState(false);
+
+  const value = {
+    state,
+    dispatch,
+    toggleForm,
+    setFormToggle,
+    setTogglePreviewMode,
+    previewMode,
+  };
 
   return (
     <AppContext.Provider value={{ ...value }}>{children}</AppContext.Provider>
