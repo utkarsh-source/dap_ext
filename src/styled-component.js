@@ -143,6 +143,19 @@ export const Settings = styled.div`
     props.toggle ? "translateY(0)" : "translateY(100%)"};
   transition: transform 0.07s ease-out;
   background-color: white;
+  /* & > button[data-settings="true"] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    transform: translateY(-100%);
+    color: white;
+    font-size: 13px;
+    padding: 2px 10px;
+    border-radius: 2px;
+    background-color: ${(props) => theme.waterBlue};
+    display: grid;
+    place-content: center;
+  } */
 `;
 
 export const FlexBox = styled.div`
@@ -498,11 +511,10 @@ export const ToastBox = styled.div`
   max-width: 400px;
   width: max-content;
   box-shadow: ${(props) => theme.shadow};
-  border-radius: 8px;
   & > div {
     display: flex;
     align-items: center;
-    border-radius: 20px;
+    border-radius: 5px;
     width: 100%;
     height: 100%;
     align-items: stretch;
@@ -529,7 +541,7 @@ export const ToastButtonBox = styled.div`
   display: flex;
   flex-direction: ${(props) => (props.single ? "row" : "column")};
   align-items: stretch;
-  margin-right: 20px;
+  margin-left: 20px;
   & > button {
     border: none;
     width: 50px;
@@ -539,7 +551,7 @@ export const ToastButtonBox = styled.div`
       font-size: 20px;
     }
     &:first-child {
-      background-color: #9d53c3;
+      background-color: ${(props) => theme.waterBlue};
       color: white;
     }
   }

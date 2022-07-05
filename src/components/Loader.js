@@ -9,7 +9,7 @@ const LoaderWrapper = function () {
   } = useContext(AppContext);
 
   return isLoading ? (
-    <PopupWrapper>
+    <PopupWrapper toggle={true}>
       <Loader>
         <ReactLoading
           type="spinningBubbles"

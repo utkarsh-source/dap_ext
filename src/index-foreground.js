@@ -46,7 +46,7 @@ createRoot(
             top: "20px",
             left: "50%",
             transform: "translate(-50%)",
-            zIndex: 999999999,
+            zIndex: 2147483647,
             pointerEvents: "auto",
             width: 0,
             height: 0,

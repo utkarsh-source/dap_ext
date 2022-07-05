@@ -104,8 +104,7 @@ export const deleteTaskFlow = (
   dispatch,
   databaseID,
   token,
-  flowUseCaseName,
-  flowDataRef
+  flowUseCaseName
 ) => {
   dispatch({ type: DELETE__FLOW__REQUEST });
   axios
@@ -121,7 +120,7 @@ export const deleteTaskFlow = (
       const { data, status, Message } = response.data;
       if (status != 200) throw data;
       dispatch({ type: DELETE__FLOW__SUCCESS });
-      viewFlows(dispatch, databaseID, token, flowDataRef);
+      viewFlows(dispatch, databaseID, token);
       toast(
         <ToastBox>
           <div>
@@ -147,7 +146,7 @@ export const deleteTaskFlow = (
     });
 };
 
-export const viewFlows = (dispatch, databaseID, token, flowDataRef) => {
+export const viewFlows = (dispatch, databaseID, token) => {
   dispatch({ type: VIEW__FLOWS__REQUEST });
   axios
     .get(`Extension/Dashboard/${databaseID}/Tasks/viewAllTaskFlow`, {
@@ -158,7 +157,6 @@ export const viewFlows = (dispatch, databaseID, token, flowDataRef) => {
     .then((response) => {
       const { taskFlows, status, data } = response.data;
       if (status != 200) throw data;
-      flowDataRef.current = taskFlows;
       dispatch({ type: VIEW__FLOWS__SUCCESS, payload: taskFlows });
     })
 

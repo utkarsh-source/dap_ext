@@ -62,7 +62,8 @@ import {
 import PreviewDescriptionTooltip from "./PreviewTooltip";
 
 function removeScrollListener() {
-  if (window.container) {
+  if ("container" in window) {
+    console.log(window);
     window.container.removeEventListener("scroll", window.handleScroll);
   } else {
     window.removeEventListener("scroll", window.handleScroll);
@@ -97,7 +98,9 @@ function onScrollEnd(container, target, tooltipRequisites, callback) {
     };
   }
 
-  if (!container.window) window.container = container;
+  if (!("window" in container)) {
+    window.container = container;
+  }
   window.handleScroll = function () {
     isScrolling = true;
     clearTimeout(timerId);
@@ -292,7 +295,7 @@ const getArrowPosition = (targetPos) => {
 
 const getTargetPosition = (element) => {
   let pos = [];
-  let [OfTop, OfLeft, OfRight, OfBottom] = [100, 20, 20, 20];
+  let [OfTop, OfLeft, OfRight, OfBottom] = [50, 200, 200, 50];
   let { top, left, width, height } = element.getBoundingClientRect();
   if (top <= OfTop) {
     pos.push("top");
@@ -338,13 +341,11 @@ function Foreground() {
   } = useContext(AppContext);
 
   const [flowName, setFlowName] = useState("");
-  const flowNameRef = useRef(null);
   const [toggleCreateFlowPopup, setToggleCreateFlowPopup] = useState(false);
   const [progress, setProgress] = useState({
     state: "off",
   });
   const [toggleFeedback, setToggleFeddback] = useState(false);
-  const [existingFlowName, setExistingFlowName] = useState({ value: null });
   const [box, setBox] = useState({ value: false });
   const [showTooltip, setTooltip] = useState({
     value: false,
@@ -353,16 +354,11 @@ function Foreground() {
   const [applicationName, setApplicationName] = useState("");
   const [init, setInit] = useState(false);
   const [toggleAnnouncement, setToggleAnnouncement] = useState(false);
-  const [togglePreviewMode, setTogglePreviewMode] = useState(false);
-  const portRef = useRef();
+  const [toggleViewMode, setToggleViewMode] = useState(false);
 
-  const previewStepCount = useRef({ value: 1, action: "next" });
+  const previewStepCount = useRef({ value: 1 });
 
   const stepsCount = useRef(0);
-
-  const escapeRef = useRef(false);
-
-  const existingFlowNameRef = useRef(null);
 
   const targetElem = useRef({
     index: null,
@@ -373,10 +369,9 @@ function Foreground() {
 
   const flowData = useRef({});
 
-  const flowDataRef = useRef();
-
   const stopFlowView = () => {
-    setTogglePreviewMode(false);
+    removeScrollListener();
+    setToggleViewMode(false);
     setTooltip({ value: false });
   };
 
@@ -388,12 +383,7 @@ function Foreground() {
           : previewStepCount.current.value - 1,
       action: "prev",
     };
-
-    if (existingFlowName.value) {
-      viewFlow(existingFlowName.value);
-    } else {
-      viewFlow(flowName);
-    }
+    viewFlow(flowName);
   };
 
   const showNextTooltip = () => {
@@ -404,19 +394,14 @@ function Foreground() {
           : previewStepCount.current.value + 1,
       action: "next",
     };
-    if (existingFlowName.value) {
-      viewFlow(existingFlowName.value);
-    } else {
-      viewFlow(flowName);
-    }
+
+    viewFlow(flowName);
   };
 
   const appendPreviewTooltip = (target, info) => {
     const { message, title, targetClickOffsetX, targetClickOffsetY } = info;
 
     let scrollableContainer = closestScrollableParent(target);
-
-    console.log(scrollableContainer, target);
 
     const tooltipRequisites = {
       title,
@@ -561,18 +546,16 @@ function Foreground() {
     if (e.code === "Escape") {
       chrome.storage.sync.set({
         flowData: flowData.current,
-        existingFlowName: existingFlowNameRef.current,
         stepsCount: stepsCount.current,
         previewStepCount: previewStepCount.current.value,
         progress: stepsCount.current > 0 ? "paused" : "off",
         flowName,
         applicationName,
+        toggleViewMode: false,
         init,
       });
-      stepsCount.current > 0;
       setProgress({ state: stepsCount.current > 0 ? "paused" : "off" });
       setInit(false);
-      escapeRef.current = true;
       setBox({ value: false });
       setTooltip({ value: false });
     }
@@ -597,113 +580,152 @@ function Foreground() {
     };
     setInit(true);
     setProgress({ state: "on" });
-    escapeRef.current = false;
     setToggleCreateFlowPopup(false);
   };
 
   const initFlowCreation = (value) => {
-    setTogglePreviewMode(false);
+    setToggleViewMode(false);
     setToggleCreateFlowPopup(value);
-    setExistingFlowName({ value: null });
-    existingFlowNameRef.current = null;
     setTooltip({ value: false });
     stepsCount.current = 0;
     setShowExistingFlow(false);
   };
 
   useEffect(() => {
-    if (showExistingFlow) viewFlows(dispatch, databaseID, token, flowDataRef);
+    if (showExistingFlow) viewFlows(dispatch, databaseID, token);
   }, [showExistingFlow]);
 
   function isCurrentDomain(targetUrl) {
-    const currentDomain = window.location.href
-      .split("/")[2]
-      .split(".")
-      .slice(-2)[0];
+    const getDomain = (url) => {
+      return url.split("/")[2].split(".").slice(-2)[0];
+    };
 
-    const targetUrlDomain = targetUrl.split("/")[2].split(".").slice(-2)[0];
+    const currentDomain = getDomain(window.location.href);
 
-    if (currentDomain !== targetUrlDomain) {
-      disableClick();
-      toast(
-        (tst) => (
-          <ToastBox>
-            <div>
-              <ToastMessage>
-                <GoAlert />
-                Flow does not belong to this domain! <b>Visit</b>
-              </ToastMessage>
-              <ToastButtonBox>
-                <button
-                  onClick={() => {
-                    enableClick();
-                    setExistingFlowName({ value: null });
-                    existingFlowNameRef.current = null;
-                    toast.remove(tst.id);
-                  }}
-                >
-                  <GoCheck />
-                </button>
-                <button
-                  primary
-                  onClick={() => {
-                    enableClick();
-                    setExistingFlowName({ value: null });
-                    existingFlowNameRef.current = null;
-                    const port = chrome.runtime.connect({
-                      name: "content_script",
-                    });
-                    port.postMessage({ type: "newTab" });
-                    toast.remove(tst.id);
-                  }}
-                >
-                  <GoX />
-                </button>
-              </ToastButtonBox>
-            </div>
-          </ToastBox>
-        ),
-        {
-          id: "flow__view__error__popup",
-          duration: Infinity,
-        }
-      );
-      return false;
-    } else {
-      return true;
-    }
+    const targetUrlDomain = getDomain(targetUrl);
+
+    return currentDomain === targetUrlDomain;
   }
 
+  const findTarget = (targetInfo) => {
+    let { tagName, xPath } = targetInfo;
+
+    let elements = Array.from(
+      document.body.querySelectorAll(tagName.toLowerCase())
+    );
+
+    const target = elements.find(
+      (element) => getXPathForElement(element) === xPath
+    );
+
+    return target;
+  };
+
   const viewFlow = (taskName) => {
-    const {
-      targetUrl,
-      targetElement: { tagName, xPath },
-    } = flowData.current[taskName]["step" + previewStepCount.current.value];
+    const { targetUrl, targetElement } =
+      flowData.current[taskName]["step" + previewStepCount.current.value];
 
-    if (isCurrentDomain(targetUrl) && targetUrl === window.location.href) {
-      let elements = Array.from(
-        document.body.querySelectorAll(tagName.toLowerCase())
-      );
+    if (isCurrentDomain(targetUrl)) {
+      if (targetUrl === window.location.href) {
+        const target = findTarget(targetElement);
+        if (!target) {
+          toast(
+            (tst) => (
+              <ToastBox>
+                <div>
+                  <ToastMessage>
+                    <GoAlert /> Failed to load tooltip!
+                  </ToastMessage>
+                </div>
+              </ToastBox>
+            ),
+            {
+              id: "flow__view__error__popup",
+            }
+          );
+        } else {
+          target.style.pointerEvents = "auto";
 
-      const target = elements.find(
-        (element) => getXPathForElement(element) === xPath
-      );
+          target.addEventListener("pointerdown", onTargetClicked);
 
-      if (!target) {
+          const onTargetClicked = (e) => {
+            if (previewStepCount.current === stepsCount.current) {
+              disableClick();
+              toast(
+                (tst) => (
+                  <PopupWrapper toggle={true}>
+                    <ToastBox>
+                      <div>
+                        <ToastMessage>
+                          <GoVerified /> Flow Completed!
+                        </ToastMessage>
+                        <ToastButtonBox single>
+                          <button onClick={enableClick}>
+                            <GoX />
+                          </button>
+                        </ToastButtonBox>
+                      </div>
+                    </ToastBox>
+                  </PopupWrapper>
+                ),
+                {
+                  id: "flow__completed__popup",
+                }
+              );
+              setToggleViewMode(false);
+              // setTooltip({ value: false });
+            } else {
+              previewStepCount.current = {
+                value:
+                  previewStepCount.current.value >= stepsCount.current
+                    ? stepsCount.current
+                    : previewStepCount.current.value + 1,
+                action: "next",
+              };
+
+              chrome.storage.sync.set({
+                flowData: flowData.current,
+                stepsCount: stepsCount.current,
+                previewStepCount: previewStepCount.current.value,
+                progress: progress.state,
+                flowName,
+                applicationName,
+                init,
+                toggleViewMode: true,
+              });
+            }
+
+            target.removeEventListener("pointerdown", onTargetClicked);
+          };
+
+          const info =
+            flowData.current[taskName]["step" + previewStepCount.current.value];
+
+          appendPreviewTooltip(target, info);
+        }
+      } else {
+        console.log("Is different url");
         disableClick();
         toast(
           (tst) => (
             <ToastBox>
               <div>
                 <ToastMessage>
-                  <GoAlert /> Failed to load tooltip. Apologies!
+                  <GoAlert />
+                  Tooltip appears to be on a different page proceed:-
                 </ToastMessage>
-                <ToastButtonBox single>
+                <ToastButtonBox>
                   <button
                     onClick={() => {
                       enableClick();
-                      setExistingFlowName({ value: null });
-                      existingFlowNameRef.current = null;
+                      handlePageChange(taskName);
+                    }}
+                  >
+                    <GoCheck />
+                  </button>
+                  <button
+                    onClick={() => {
+                      enableClick();
                       switch (previewStepCount.current.action) {
                         case "prev": {
                           previewStepCount.current = {
@@ -728,49 +750,11 @@ function Foreground() {
             </ToastBox>
           ),
           {
-            id: "flow__view__error__popup",
+            id: "page__change__popup",
             duration: Infinity,
           }
         );
-        return;
       }
-
-      const onTargetClicked = (e) => {
-        previewStepCount.current = {
-          value:
-            previewStepCount.current.value >= stepsCount.current
-              ? stepsCount.current
-              : previewStepCount.current.value + 1,
-          action: "next",
-        };
-
-        if (previewStepCount.current === stepsCount.current) {
-          setTogglePreviewMode(false);
-          setTooltip({ value: false });
-        }
-
-        chrome.storage.sync.set({
-          flowData: flowData.current,
-          existingFlowName: existingFlowNameRef.current,
-          stepsCount: stepsCount.current,
-          previewStepCount: previewStepCount.current.value,
-          progress: progress.state,
-          flowName,
-          applicationName,
-          init,
-        });
-
-        target.removeEventListener("pointerdown", onTargetClicked);
-      };
-
-      target.style.pointerEvents = "auto";
-
-      target.addEventListener("pointerdown", onTargetClicked);
-
-      const info =
-        flowData.current[taskName]["step" + previewStepCount.current.value];
-
-      appendPreviewTooltip(target, info);
     } else {
       disableClick();
       toast(
@@ -779,29 +763,25 @@ function Foreground() {
             <div>
               <ToastMessage>
                 <GoAlert />
-                Seems like tooltip is on a different page. <b>Proceed</b>
+                Flow does not belong to this domain visit:-
               </ToastMessage>
               <ToastButtonBox>
-                <button onClick={handlePageChange}>
-                  <GoCheck />
-                </button>
                 <button
                   onClick={() => {
                     enableClick();
-                    switch (previewStepCount.current.action) {
-                      case "prev": {
-                        previewStepCount.current = {
-                          value: previewStepCount.current.value + 1,
-                        };
-                        break;
-                      }
-                      case "next": {
-                        previewStepCount.current = {
-                          value: previewStepCount.current.value - 1,
-                        };
-                        break;
-                      }
-                    }
+                    toast.remove(tst.id);
+                  }}
+                >
+                  <GoCheck />
+                </button>
+                <button
+                  primary
+                  onClick={() => {
+                    enableClick();
+                    const port = chrome.runtime.connect({
+                      name: "content_script",
+                    });
+                    port.postMessage({ type: "newTab" });
                     toast.remove(tst.id);
                   }}
                 >
@@ -812,7 +792,7 @@ function Foreground() {
           </ToastBox>
         ),
         {
-          id: "page__change__popup",
+          id: "flow__view__error__popup",
           duration: Infinity,
         }
       );
@@ -821,7 +801,7 @@ function Foreground() {
 
   const discardProgress = () => {
     enableClick();
-    setTogglePreviewMode(false);
+    setToggleViewMode(false);
     setTooltip({ value: false });
     setFlowName("");
     setApplicationName("");
@@ -840,77 +820,58 @@ function Foreground() {
     chrome.storage.sync.set({ tabUrl: window.location.href });
   };
 
-  const handlePageChange = () => {
-    removeScrollListener();
-    enableClick();
+  const handlePageChange = (taskName) => {
     chrome.storage.sync.set({
       flowData: flowData.current,
-      flowName,
-      existingFlowName: existingFlowNameRef.current,
+      flowName: taskName,
       stepsCount: stepsCount.current,
       previewStepCount: previewStepCount.current.value,
       progress: progress.state,
       applicationName,
       init,
-      togglePreviewMode: true,
+      toggleViewMode: true,
     });
 
-    let taskFlowName = existingFlowNameRef.current || flowName;
-
     let URL_TO_NAVIGATE =
-      flowData.current[taskFlowName]["step" + previewStepCount.current.value]
+      flowData.current[taskName]["step" + previewStepCount.current.value]
         ?.targetUrl;
 
     window.location.href = URL_TO_NAVIGATE;
   };
 
-  const handleExistingFlowPreview = (flow) => {
+  const viewExistingFlow = (flow) => {
+    setShowExistingFlow(false);
+
     const { applicationTaskFlowUseCase, taskList } = flow;
 
-    existingFlowNameRef.current = applicationTaskFlowUseCase;
-
-    setExistingFlowName({ value: applicationTaskFlowUseCase });
-    setShowExistingFlow(false);
+    setFlowName(applicationTaskFlowUseCase);
 
     flowData.current[applicationTaskFlowUseCase] = {};
 
-    taskList.forEach(
-      ({
-        stepNumber,
-        targetURL,
-        taskMessage,
-        title,
-        htmlTag,
-        xPath,
-        targetClickOffsetX,
-        targetClickOffsetY,
-      }) => {
-        flowData.current[applicationTaskFlowUseCase]["step" + stepNumber] = {
-          targetElement: {
-            tagName: htmlTag,
-            xPath,
-          },
-          message: taskMessage,
-          targetUrl: targetURL,
-          title,
-          targetClickOffsetX,
-          targetClickOffsetY,
-        };
-      }
-    );
+    taskList.forEach((task) => {
+      flowData.current[applicationTaskFlowUseCase]["step" + task.stepNumber] = {
+        targetElement: {
+          tagName: task.htmlTag,
+          xPath: task.xPath,
+        },
+        message: task.taskMessage,
+        targetUrl: task.targetURL,
+        title: task.title,
+        targetClickOffsetX: task.targetClickOffsetX,
+        targetClickOffsetY: task.targetClickOffsetY,
+      };
+    });
 
     stepsCount.current = taskList.length;
-    previewStepCount.current = {
-      value: 1,
-    };
+    previewStepCount.current.value = 1;
 
-    setTogglePreviewMode(true);
+    setToggleViewMode(true);
 
     viewFlow(applicationTaskFlowUseCase);
   };
 
   const submitData = () => {
-    setTogglePreviewMode(false);
+    setToggleViewMode(false);
     chrome.storage.sync.remove([
       "flowData",
       "flowName",
@@ -923,23 +884,45 @@ function Foreground() {
     createFlow(dispatch, databaseID, token, data, setProgress);
   };
 
-  const handleFlowDelete = (flowUseCaseName) => {
-    if (existingFlowNameRef.current === flowUseCaseName) {
-      setExistingFlowName({ value: null });
-      existingFlowNameRef.current = null;
-    }
-    deleteTaskFlow(dispatch, databaseID, token, flowUseCaseName, flowDataRef);
+  const deleteExistingFlow = (flowUseCaseName) => {
+    disableClick();
+    toast(
+      (tst) => (
+        <ToastBox>
+          <div>
+            <ToastMessage>
+              <GoAlert /> Are you sure?
+            </ToastMessage>
+            <ToastButtonBox>
+              <button
+                onClick={() => {
+                  enableClick();
+                  deleteTaskFlow(dispatch, databaseID, token, flowUseCaseName);
+                  toast.remove(tst.id);
+                }}
+              >
+                <GoCheck />
+              </button>
+              <button
+                onClick={() => {
+                  enableClick();
+                  toast.remove(tst.id);
+                }}
+              >
+                <GoX />
+              </button>
+            </ToastButtonBox>
+          </div>
+        </ToastBox>
+      ),
+      {
+        id: "flow__delete_popup",
+        duration: Infinity,
+      }
+    );
   };
 
-  const handleFlowSearch = (e) => {
-    let flowsCopy = flowDataRef.current;
-    let payload = flowsCopy.filter((flow) =>
-      flow.applicationTaskFlowUseCase
-        .toLowerCase()
-        .startsWith(e.target.value.toLowerCase())
-    );
-    dispatch({ type: VIEW__FLOWS__SUCCESS, payload });
-  };
+  const handleFlowSearch = (e) => {};
 
   useEffect(() => {
     if (init) {
@@ -959,10 +942,8 @@ function Foreground() {
   }, [toggleFeedback]);
 
   useEffect(() => {
-    if (!togglePreviewMode) {
-      removeScrollListener();
-    }
-  }, [togglePreviewMode]);
+    console.log("from useEffect===> ", document.readyState);
+  }, [document.readyState]);
 
   useEffect(() => {
     chrome.storage.sync.get(
@@ -971,10 +952,9 @@ function Foreground() {
         "stepsCount",
         "flowName",
         "previewStepCount",
-        "existingFlowName",
         "progress",
         "applicationName",
-        "togglePreviewMode",
+        "toggleViewMode",
       ],
       function (savedData) {
         if (Object.keys(savedData).length > 0) {
@@ -984,21 +964,16 @@ function Foreground() {
           if (savedData.flowName) {
             flowData.current[savedData.flowName] =
               savedData.flowData[savedData.flowName];
-            if (savedData.togglePreviewMode) {
-              setTogglePreviewMode(savedData.togglePreviewMode);
+            if (savedData.toggleViewMode) {
+              setToggleViewMode(savedData.toggleViewMode);
               setTimeout(() => {
+                console.log("from setTimeout ===> ", document.readyState);
                 viewFlow(savedData.flowName);
-              }, 10);
+              }, 50);
             }
             setFlowName(savedData.flowName);
             setApplicationName(savedData.applicationName);
             setProgress({ state: savedData.progress });
-          }
-          if (savedData.existingFlowName) {
-            existingFlowNameRef.current = savedData.existingFlowName;
-            setExistingFlowName({ value: savedData.existingFlowName });
-            flowData.current[savedData.existingFlowName] =
-              savedData.flowData[savedData.existingFlowName];
           }
         }
       }
@@ -1010,8 +985,7 @@ function Foreground() {
       <div>
         <Settings
           toggle={
-            (["paused", "off"].includes(progress.state) &&
-              !togglePreviewMode) ||
+            (["paused", "off"].includes(progress.state) && !toggleViewMode) ||
             undefined
           }
         >
@@ -1031,7 +1005,7 @@ function Foreground() {
             {progress.state === "paused" && stepsCount.current > 0 && (
               <Button
                 onClick={() => {
-                  setTogglePreviewMode(true);
+                  setToggleViewMode(true);
                   viewFlow(flowName);
                 }}
               >
@@ -1052,22 +1026,18 @@ function Foreground() {
               </Button>
             )}
             {stepsCount.current > 0 &&
-              ["paused", "on"].includes(progress.state) &&
-              !existingFlowName.value && (
+              ["paused", "on"].includes(progress.state) && (
                 <Button type="button" onClick={discardProgress}>
                   Discard{" "}
                 </Button>
               )}
+            {stepsCount.current > 0 && progress.state === "paused" && (
+              <Button type="button" onClick={addHoverInspect}>
+                Continue{" "}
+              </Button>
+            )}
             {stepsCount.current > 0 &&
-              progress.state === "paused" &&
-              !existingFlowName.value && (
-                <Button type="button" onClick={addHoverInspect}>
-                  Continue{" "}
-                </Button>
-              )}
-            {stepsCount.current > 0 &&
-              ["paused", "on"].includes(progress.state) &&
-              !existingFlowName.value && (
+              ["paused", "on"].includes(progress.state) && (
                 <Button onClick={submitData}>Save </Button>
               )}
             <Button
@@ -1147,7 +1117,7 @@ function Foreground() {
         </>
       )}
       {showTooltip.value &&
-        (togglePreviewMode ? (
+        (toggleViewMode ? (
           <PreviewDescriptionTooltip
             {...{
               previewStepCount,
@@ -1163,7 +1133,7 @@ function Foreground() {
           <Tooltip
             {...{
               setProgress,
-              setTogglePreviewMode,
+              setToggleViewMode,
               targetElem,
               stepsCount,
               setTooltip,
@@ -1198,33 +1168,6 @@ function Foreground() {
           </InputBox>
           <FilterIcon as={BiFilterAlt} />
         </FlexBox>
-        {progress.state === "paused" && (
-          <CurrentFlowBox>
-            <>
-              <p>
-                In progress :- <span>{flowName}</span>
-              </p>
-              {existingFlowName.value && (
-                <button
-                  aria-label="button"
-                  onClick={() => {
-                    chrome.storage.sync.remove(["existingFlowName"]);
-                    setExistingFlowName({ value: null });
-                    existingFlowNameRef.current = null;
-                    const steps = Object.keys(flowData.current[flowName]);
-                    stepsCount.current = steps.length;
-                    previewStepCount.current = {
-                      value: 1,
-                    };
-                    viewFlow(flowName);
-                  }}
-                >
-                  Preview
-                </button>
-              )}
-            </>
-          </CurrentFlowBox>
-        )}
         {flows.isLoading ? (
           <Loader
             style={{
@@ -1254,44 +1197,24 @@ function Foreground() {
                         height: "max-content",
                       }}
                       onClick={() =>
-                        handleFlowDelete(flow.applicationTaskFlowUseCase)
+                        deleteExistingFlow(flow.applicationTaskFlowUseCase)
                       }
                     >
                       <RiDeleteBin6Line /> <span>Delete</span>
                     </Button>
-                    {existingFlowName.value ===
-                    flow.applicationTaskFlowUseCase ? (
-                      <Button
-                        style={{
-                          padding: "5px 10px",
-                          width: "max-content",
-                          height: "max-content",
-                        }}
-                        primary
-                        onClick={() => {
-                          setExistingFlowName({ value: null });
-                          setTogglePreviewMode(false);
-                          existingFlowNameRef.current = null;
-                          setTooltip({ value: false });
-                        }}
-                      >
-                        <span>Stop</span>
-                        <BsFillEyeSlashFill />
-                      </Button>
-                    ) : (
-                      <Button
-                        style={{
-                          padding: "5px 10px",
-                          width: "max-content",
-                          height: "max-content",
-                        }}
-                        primary
-                        onClick={() => handleExistingFlowPreview(flow)}
-                      >
-                        <BsFillEyeFill />
-                        <span>View</span>
-                      </Button>
-                    )}
+
+                    <Button
+                      style={{
+                        padding: "5px 10px",
+                        width: "max-content",
+                        height: "max-content",
+                      }}
+                      primary
+                      onClick={() => viewExistingFlow(flow)}
+                    >
+                      <BsFillEyeFill />
+                      <span>View</span>
+                    </Button>
                   </ButtonWrapper>
                 </li>
               );
@@ -1304,9 +1227,9 @@ function Foreground() {
       <InfoBox toggle={progress.state === "on" || undefined}>
         Press <span>ESC</span> to interact with the page
       </InfoBox>
-      <PreviewBox toggle={togglePreviewMode || undefined}>
+      <PreviewBox toggle={toggleViewMode || undefined}>
         <span>
-          <GoPrimitiveDot /> previewing...
+          <GoPrimitiveDot /> viewing...
         </span>
         <button onClick={() => stopFlowView()}>
           <GoX />
