@@ -704,7 +704,6 @@ function Foreground() {
           appendPreviewTooltip(target, info);
         }
       } else {
-        console.log("Is different url");
         disableClick();
         toast(
           (tst) => (
@@ -781,7 +780,7 @@ function Foreground() {
                     const port = chrome.runtime.connect({
                       name: "content_script",
                     });
-                    port.postMessage({ type: "newTab" });
+                    port.postMessage({ type: "newTab", url: targetUrl });
                     toast.remove(tst.id);
                   }}
                 >
@@ -942,10 +941,6 @@ function Foreground() {
   }, [toggleFeedback]);
 
   useEffect(() => {
-    console.log("from useEffect===> ", document.readyState);
-  }, [document.readyState]);
-
-  useEffect(() => {
     chrome.storage.sync.get(
       [
         "flowData",
@@ -967,7 +962,6 @@ function Foreground() {
             if (savedData.toggleViewMode) {
               setToggleViewMode(savedData.toggleViewMode);
               setTimeout(() => {
-                console.log("from setTimeout ===> ", document.readyState);
                 viewFlow(savedData.flowName);
               }, 50);
             }
@@ -1068,6 +1062,7 @@ function Foreground() {
                 type="text"
               />
             </InputBox>
+
             <InputBox>
               <Icon as={RiPencilFill} />
               <Input

@@ -460,7 +460,7 @@ export const Arrow = styled.div`
   position: absolute;
   width: 15px;
   height: 15px;
-  border-top-left-radius: 5px;
+  border-radius: 2px;
   background-color: white;
 `;
 
