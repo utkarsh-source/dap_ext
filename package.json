@@ -4,9 +4,10 @@
   "description": "",
   "main": "index-popup.js",
   "dependencies": {
+    "@medv/finder": "^2.1.0",
     "@webcomponents/custom-elements": "^1.5.0",
     "axios": "^0.26.1",
-    "get-xpath": "^3.0.1",
+    "css-selector-generator": "^3.6.1",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "react-hot-toast": "^2.2.0",

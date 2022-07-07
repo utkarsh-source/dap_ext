@@ -60,6 +60,7 @@ import {
   ToastMessage,
 } from "../styled-component";
 import PreviewDescriptionTooltip from "./PreviewTooltip";
+import { getCssSelector } from "css-selector-generator";
 
 function removeScrollListener() {
   if ("container" in window) {
@@ -135,7 +136,6 @@ function enableClick() {
 
 function getXPathForElement(element) {
   const idx = (sib, name) => {
-    console.log(sib, name);
     sib
       ? idx(sib.previousElementSibling, name || sib.localName) +
         (sib.localName == name)
@@ -425,9 +425,11 @@ function Foreground() {
     e.preventDefault(); // to stop Focus Events on Target Element
     e.stopPropagation(); // to stop Focus Events on Target Element
     disableClick();
-    const xPath = getXPathForElement(target);
-    // const xPath = getXPath(target);
-    // console.log(xPath);
+    const xPath = getCssSelector(target, {
+      selectors: ["class", "nthoftype", "nthchild"],
+      maxCandidates: 200,
+      maxCombinations: 200,
+    });
     targetElem.current = {
       xPath,
       tagName: target.tagName,
@@ -616,13 +618,11 @@ function Foreground() {
     return new Promise((resolve, reject) => {
       let cummulativeDelay = 0;
       const a = () => {
-        let elements = Array.from(
-          document.body.querySelectorAll(tagName.toLowerCase())
-        );
+        // let elements = Array.from(
+        //   document.body.querySelectorAll(tagName.toLowerCase())
+        // );
 
-        let target = elements.find(
-          (element) => getXPathForElement(element) === xPath
-        );
+        let target = document.querySelector(xPath);
 
         if (!target) {
           if (cummulativeDelay >= 100000) {
