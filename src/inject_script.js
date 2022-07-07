@@ -134,8 +134,6 @@ window.dapExtensionCore = {
                   z-index: 2147483647;
             }
 
-
-
             input,
             a,
             button,
@@ -152,7 +150,6 @@ window.dapExtensionCore = {
             li {
             list-style: none;
             }
-
 
             * {
               font-family: "Montserrat", sans-serif;
@@ -179,14 +176,6 @@ window.dapExtensionCore = {
   },
 };
 
-// document.documentElement.append(
-//   dap_das_core.loaderStyles,
-//   dap_das_core.dapDasLoader
-// );
-
-setTimeout(() => {
-  document.documentElement.append(
-    window.dapExtensionCore.globalStyles,
-    window.dapExtensionCore.foreground
-  );
-}, 500);
+// if () {
+// }
+document.documentElement.append(window.dapExtensionCore.foreground);

@@ -521,6 +521,7 @@ export const ToastBox = styled.div`
     justify-content: space-between;
     background-color: white;
     overflow: hidden;
+    border-left: 3px solid ${(props) => theme.waterBlue};
   }
 `;
 
@@ -565,8 +566,11 @@ export const PreviewBox = styled.div`
   display: flex;
   align-items: center;
   column-gap: 5px;
-  height: 30px;
+  height: 40px;
+  transition: opacity 0.07s linear, transform 0.07s ease-out;
   opacity: ${(props) => (props.toggle ? 1 : 0)};
+  transform: ${(props) =>
+    props.toggle ? "translateY(0%)" : "translateY(-200%)"};
   pointer-events: ${(props) => (props.toggle ? "auto" : "none")};
   & > span {
     display: flex;
@@ -577,12 +581,12 @@ export const PreviewBox = styled.div`
     color: white;
     border-radius: 5px;
     align-self: stretch;
-    padding: 0 10px;
+    padding: 0 20px;
     border-radius: 4px;
     column-gap: 5px;
   }
   & > button {
-    padding: 0 8px;
+    padding: 0 12px;
     display: inline-grid;
     place-content: center;
     background-color: ${(props) => theme.gray};

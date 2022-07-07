@@ -1,6 +1,5 @@
 import React, { useState, useContext } from "react";
 import { CgClose } from "react-icons/cg";
-import { AiOutlineInfoCircle } from "react-icons/ai";
 import { AppContext } from "../../AppContext";
 import toast from "react-hot-toast";
 import { FaAngleRight } from "react-icons/fa";
@@ -10,15 +9,14 @@ import {
   ButtonRounded,
   ButtonWrapper,
   PopupWrapper,
-  PreviewTooltip,
   TooltipBox,
 } from "../styled-component";
-import { GoTriangleLeft, GoTriangleRight } from "react-icons/go";
+import { createFlow } from "../action/action";
 
 const Tooltip = (props) => {
   const {
     targetElem,
-    setTogglePreviewMode,
+    setToggleViewMode,
     top,
     left,
     relX,
@@ -45,23 +43,44 @@ const Tooltip = (props) => {
   const {
     dispatch,
     state: {
-      login: { auth, token },
+      login: { token, databaseID },
     },
   } = useContext(AppContext);
 
   const submitData = () => {
+    if (!data.title || !data.message) {
+      toast.error("No fields can be empty!");
+      return;
+    }
+    stepsCount.current++;
     removeScrollListener();
-    setTogglePreviewMode(false);
-    chrome.storage.sync.remove([
-      "flowData",
-      "flowName",
-      "stepsCount",
-      "previewStepCount",
-      "applicationName",
-    ]);
+    setToggleViewMode(false);
+    enableClick();
+    setInit(true);
     setTooltip({ value: false });
-    const data = getFlowData(flowData.current, flowName, applicationName);
-    createFlow(dispatch, data, token, setProgress);
+    flowData.current[flowName] = {
+      ...flowData.current[flowName],
+      ["step" + stepsCount.current]: {
+        title: data.title,
+        message: data.message,
+        targetElement: targetElem.current,
+        targetUrl: window.location.href,
+        targetClickOffsetX: relX,
+        targetClickOffsetY: relY,
+      },
+    };
+    chrome.storage.sync.remove([
+      "applicationName",
+      "flowData",
+      "stepsCount",
+      "flowName",
+      "previewStepCount",
+      "progress",
+      "toggleViewMode",
+      "init",
+    ]);
+    const flowData = getFlowData(flowData.current, flowName, applicationName);
+    createFlow(dispatch, databaseID, token, flowData, setProgress);
   };
 
   const handleNextStep = (e) => {

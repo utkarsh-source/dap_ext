@@ -63,7 +63,6 @@ import PreviewDescriptionTooltip from "./PreviewTooltip";
 
 function removeScrollListener() {
   if ("container" in window) {
-    console.log(window);
     window.container.removeEventListener("scroll", window.handleScroll);
   } else {
     window.removeEventListener("scroll", window.handleScroll);
@@ -135,11 +134,13 @@ function enableClick() {
 }
 
 function getXPathForElement(element) {
-  const idx = (sib, name) =>
+  const idx = (sib, name) => {
+    console.log(sib, name);
     sib
       ? idx(sib.previousElementSibling, name || sib.localName) +
         (sib.localName == name)
       : 1;
+  };
   const segs = (elm) =>
     !elm || elm.nodeType !== 1
       ? [""]
@@ -425,6 +426,8 @@ function Foreground() {
     e.stopPropagation(); // to stop Focus Events on Target Element
     disableClick();
     const xPath = getXPathForElement(target);
+    // const xPath = getXPath(target);
+    // console.log(xPath);
     targetElem.current = {
       xPath,
       tagName: target.tagName,
@@ -609,16 +612,36 @@ function Foreground() {
 
   const findTarget = (targetInfo) => {
     let { tagName, xPath } = targetInfo;
+    const delay = 200;
+    return new Promise((resolve, reject) => {
+      let cummulativeDelay = 0;
+      const a = () => {
+        let elements = Array.from(
+          document.body.querySelectorAll(tagName.toLowerCase())
+        );
 
-    let elements = Array.from(
-      document.body.querySelectorAll(tagName.toLowerCase())
-    );
+        let target = elements.find(
+          (element) => getXPathForElement(element) === xPath
+        );
 
-    const target = elements.find(
-      (element) => getXPathForElement(element) === xPath
-    );
+        if (!target) {
+          if (cummulativeDelay >= 100000) {
+            reject("Failed to find target!");
+          } else {
+            setTimeout(() => {
+              console.log("Searching for target");
+              cummulativeDelay += delay;
+              target = a();
+            }, delay);
+          }
+        } else {
+          resolve(target);
+        }
 
-    return target;
+        return target;
+      };
+      a();
+    });
   };
 
   const viewFlow = (taskName) => {
@@ -627,82 +650,85 @@ function Foreground() {
 
     if (isCurrentDomain(targetUrl)) {
       if (targetUrl === window.location.href) {
-        const target = findTarget(targetElement);
-        if (!target) {
-          toast(
-            (tst) => (
-              <ToastBox>
-                <div>
-                  <ToastMessage>
-                    <GoAlert /> Failed to load tooltip!
-                  </ToastMessage>
-                </div>
-              </ToastBox>
-            ),
-            {
-              id: "flow__view__error__popup",
-            }
-          );
-        } else {
-          target.style.pointerEvents = "auto";
+        findTarget(targetElement)
+          .then((target) => {
+            target.style.pointerEvents = "auto";
 
-          target.addEventListener("pointerdown", onTargetClicked);
+            target.addEventListener("pointerdown", onTargetClicked);
 
-          const onTargetClicked = (e) => {
-            if (previewStepCount.current === stepsCount.current) {
-              disableClick();
-              toast(
-                (tst) => (
-                  <PopupWrapper toggle={true}>
-                    <ToastBox>
-                      <div>
-                        <ToastMessage>
-                          <GoVerified /> Flow Completed!
-                        </ToastMessage>
-                        <ToastButtonBox single>
-                          <button onClick={enableClick}>
-                            <GoX />
-                          </button>
-                        </ToastButtonBox>
-                      </div>
-                    </ToastBox>
-                  </PopupWrapper>
-                ),
-                {
-                  id: "flow__completed__popup",
-                }
-              );
-              setToggleViewMode(false);
-              // setTooltip({ value: false });
-            } else {
-              previewStepCount.current = {
-                value:
-                  previewStepCount.current.value >= stepsCount.current
-                    ? stepsCount.current
-                    : previewStepCount.current.value + 1,
-                action: "next",
-              };
+            const onTargetClicked = (e) => {
+              if (previewStepCount.current === stepsCount.current) {
+                disableClick();
+                toast(
+                  (tst) => (
+                    <PopupWrapper toggle={true}>
+                      <ToastBox>
+                        <div>
+                          <ToastMessage>
+                            <GoVerified /> Flow Completed!
+                          </ToastMessage>
+                          <ToastButtonBox single>
+                            <button onClick={enableClick}>
+                              <GoX />
+                            </button>
+                          </ToastButtonBox>
+                        </div>
+                      </ToastBox>
+                    </PopupWrapper>
+                  ),
+                  {
+                    id: "flow__completed__popup",
+                  }
+                );
+                setToggleViewMode(false);
+                // setTooltip({ value: false });
+              } else {
+                previewStepCount.current = {
+                  value:
+                    previewStepCount.current.value >= stepsCount.current
+                      ? stepsCount.current
+                      : previewStepCount.current.value + 1,
+                  action: "next",
+                };
 
-              chrome.storage.sync.set({
-                flowData: flowData.current,
-                stepsCount: stepsCount.current,
-                previewStepCount: previewStepCount.current.value,
-                progress: progress.state,
-                flowName,
-                applicationName,
-                init,
-                toggleViewMode: true,
-              });
-            }
+                chrome.storage.sync.set({
+                  flowData: flowData.current,
+                  stepsCount: stepsCount.current,
+                  previewStepCount: previewStepCount.current.value,
+                  progress: progress.state,
+                  flowName,
+                  applicationName,
+                  init,
+                  toggleViewMode: true,
+                });
+              }
 
-            target.removeEventListener("pointerdown", onTargetClicked);
-          };
+              target.removeEventListener("pointerdown", onTargetClicked);
+            };
 
-          const info =
-            flowData.current[taskName]["step" + previewStepCount.current.value];
+            const info =
+              flowData.current[taskName][
+                "step" + previewStepCount.current.value
+              ];
 
-          appendPreviewTooltip(target, info);
-        }
+            appendPreviewTooltip(target, info);
+          })
+          .catch((err) => {
+            toast(
+              (tst) => (
+                <ToastBox>
+                  <div>
+                    <ToastMessage>
+                      <GoAlert /> {err}
+                    </ToastMessage>
+                  </div>
+                </ToastBox>
+              ),
+              {
+                id: "flow__view__error__popup",
+              }
+            );
+          });
       } else {
         disableClick();
         toast(
@@ -725,6 +751,7 @@ function Foreground() {
                   <button
                     onClick={() => {
                       enableClick();
+                      setToggleViewMode(false);
                       switch (previewStepCount.current.action) {
                         case "prev": {
                           previewStepCount.current = {
@@ -815,6 +842,8 @@ function Foreground() {
       "flowName",
       "previewStepCount",
       "progress",
+      "toggleViewMode",
+      "init",
     ]);
     chrome.storage.sync.set({ tabUrl: window.location.href });
   };
@@ -872,11 +901,14 @@ function Foreground() {
   const submitData = () => {
     setToggleViewMode(false);
     chrome.storage.sync.remove([
-      "flowData",
-      "flowName",
-      "stepsCount",
-      "previewStepCount",
       "applicationName",
+      "flowData",
+      "stepsCount",
+      "flowName",
+      "previewStepCount",
+      "progress",
+      "toggleViewMode",
+      "init",
     ]);
     setTooltip({ value: false });
     const data = getFlowData(flowData.current, flowName, applicationName);

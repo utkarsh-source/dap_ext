@@ -26,41 +26,38 @@ const AuthWrapper = () => {
   return isLoading ? null : token ? <Foreground /> : <Login />;
 };
 
-setTimeout(() => {
-  createRoot(
-    document.documentElement
-      .querySelector("#dap__ext__foreground")
-      .shadowRoot.querySelector("#react-root")
-  ).render(
-    <StyleSheetManager
-      target={
-        document.documentElement.querySelector("#dap__ext__foreground")
-          .shadowRoot
-      }
-    >
-      <ThemeProvider theme={theme}>
-        <AppContextProvider>
-          <AuthWrapper />
-          <Toaster
-            toastOptions={{
-              duration: 1000,
-            }}
-            containerStyle={{
-              position: "fixed",
-              top: "20px",
-              left: "50%",
-              transform: "translate(-50%)",
-              zIndex: 2147483647,
-              pointerEvents: "auto",
-              width: 0,
-              height: 0,
-              overflow: "visible",
-              isolation: "isolate",
-            }}
-          />
-          <LoaderWrapper />
-        </AppContextProvider>
-      </ThemeProvider>
-    </StyleSheetManager>
-  );
-}, 600);
+createRoot(
+  document.documentElement
+    .querySelector("#dap__ext__foreground")
+    .shadowRoot.querySelector("#react-root")
+).render(
+  <StyleSheetManager
+    target={
+      document.documentElement.querySelector("#dap__ext__foreground").shadowRoot
+    }
+  >
+    <ThemeProvider theme={theme}>
+      <AppContextProvider>
+        <AuthWrapper />
+        <Toaster
+          toastOptions={{
+            duration: 1000,
+          }}
+          containerStyle={{
+            position: "fixed",
+            top: "20px",
+            left: "50%",
+            transform: "translate(-50%)",
+            zIndex: 2147483647,
+            pointerEvents: "auto",
+            width: 0,
+            height: 0,
+            overflow: "visible",
+            isolation: "isolate",
+          }}
+        />
+        <LoaderWrapper />
+      </AppContextProvider>
+    </ThemeProvider>
+  </StyleSheetManager>
+);
