@@ -2,7 +2,17 @@ import React from "react";
 import { useEffect, useState, useContext, useRef } from "react";
 import { AppContext } from "../../AppContext";
 import { MdClose, MdLogout } from "react-icons/md";
-import { GoAlert, GoCheck, GoEye, GoMegaphone, GoX } from "react-icons/go";
+import {
+  GoAlert,
+  GoCheck,
+  GoEye,
+  GoMegaphone,
+  GoX,
+  GoThumbsup,
+  GoTools,
+  GoPrimitiveDot,
+} from "react-icons/go";
+import { GrBraille, GrEdit } from "react-icons/gr";
 import Tooltip from "./Tooltip";
 import {
   createFlow,
@@ -20,23 +30,15 @@ import {
 } from "react-icons/ri";
 import { BsFillEyeFill, BsFillEyeSlashFill } from "react-icons/bs";
 import { MdOutlineAppRegistration } from "react-icons/md";
-import { GoCommentDiscussion } from "react-icons/go";
-import { GoPrimitiveDot } from "react-icons/go";
 import ReactLoading from "react-loading";
 import { getFlowData } from "../helper/flowData";
 import { BiSearchAlt, BiFilterAlt } from "react-icons/bi";
-import { VIEW__FLOWS__SUCCESS } from "../action/actionType";
 import Annoucement from "./Annoucement";
 import {
-  AnnouncementBox,
   Arrow,
-  Badge,
   Button,
   ButtonRounded,
   ButtonWrapper,
-  CloseButton,
-  CurrentFlowBox,
-  CurrentFlowInfo,
   ErrorMessage,
   Feedback,
   FilterIcon,
@@ -62,59 +64,45 @@ import {
 import PreviewDescriptionTooltip from "./PreviewTooltip";
 import { getCssSelector } from "css-selector-generator";
 
-function removeScrollListener() {
-  if ("container" in window) {
-    window.container.removeEventListener("scroll", window.handleScroll);
-  } else {
-    window.removeEventListener("scroll", window.handleScroll);
-  }
+function calculateTooltipPosition(target, tooltipRequisites) {
+  const { top, left, width, height, pos } = getTargetPosition(target);
+  const { title = "", message = "", relX, relY } = tooltipRequisites;
+  const arrowPos = getArrowPosition(pos);
+  const {
+    top: t,
+    left: l,
+    translateX,
+    translateY,
+  } = getTooltipPosition(pos, top, left, width, height, relX, relY);
+  return {
+    value: true,
+    top: t,
+    left: l,
+    translateX,
+    translateY,
+    arrowPos,
+    title,
+    taskMessage: message,
+    relX,
+    relY,
+  };
 }
 
-function onScrollEnd(container, target, tooltipRequisites, callback) {
-  let timerId = null;
-  let isScrolling = null;
+function onRePosition(target, tooltipRequisites, timerRef, callBack) {
+  let { top, left } = target.getBoundingClientRect();
 
-  function calculateTooltipPosition() {
-    const { top, left, width, height, pos } = getTargetPosition(target);
-    const { title = "", message = "", relX, relY } = tooltipRequisites;
-    const arrowPos = getArrowPosition(pos);
-    const {
-      top: t,
-      left: l,
-      translateX,
-      translateY,
-    } = getTooltipPosition(pos, top, left, width, height, relX, relY);
-    return {
-      value: true,
-      top: t,
-      left: l,
-      translateX,
-      translateY,
-      arrowPos,
-      title,
-      taskMessage: message,
-      relX,
-      relY,
-    };
-  }
+  callBack(calculateTooltipPosition(target, tooltipRequisites));
 
-  if (!("window" in container)) {
-    window.container = container;
-  }
-  window.handleScroll = function () {
-    isScrolling = true;
-    clearTimeout(timerId);
-    timerId = setTimeout(() => {
-      isScrolling = false;
-      if (!isScrolling) {
-        callback(calculateTooltipPosition());
-      }
-    }, 25);
-  };
-  container.addEventListener("scroll", window.handleScroll);
-  timerId = setTimeout(() => {
-    callback(calculateTooltipPosition());
-  }, 30);
+  timerRef.current = setInterval(() => {
+    let currentRect = target.getBoundingClientRect();
+
+    if (top !== currentRect.top || left !== currentRect.left) {
+      top = currentRect.top;
+      left = currentRect.left;
+      callBack(calculateTooltipPosition(target, tooltipRequisites));
+    } else {
+    }
+  }, 50);
 }
 
 function closestScrollableParent(target) {
@@ -132,27 +120,6 @@ function disableClick() {
 
 function enableClick() {
   document.body.style.pointerEvents = "auto";
-}
-
-function getXPathForElement(element) {
-  const idx = (sib, name) => {
-    sib
-      ? idx(sib.previousElementSibling, name || sib.localName) +
-        (sib.localName == name)
-      : 1;
-  };
-  const segs = (elm) =>
-    !elm || elm.nodeType !== 1
-      ? [""]
-      : elm.id && document.getElementById(elm.id) === elm
-      ? [`id("${elm.id}")`]
-      : [
-          ...segs(elm.parentNode),
-          elm instanceof HTMLElement
-            ? `${elm.localName}[${idx(elm)}]`
-            : `*[local-name() = "${elm.localName}"][${idx(elm)}]`,
-        ];
-  return segs(element).join("/");
 }
 
 const getTooltipPosition = (pos, top, left, width, height, relX, relY) => {
@@ -357,6 +324,10 @@ function Foreground() {
   const [toggleAnnouncement, setToggleAnnouncement] = useState(false);
   const [toggleViewMode, setToggleViewMode] = useState(false);
 
+  const iframeRef = useRef();
+
+  const timerRef = useRef(null);
+
   const previewStepCount = useRef({ value: 1 });
 
   const stepsCount = useRef(0);
@@ -366,12 +337,10 @@ function Foreground() {
     tagName: "",
   });
 
-  const { current: prevCord } = useRef({ x: 0, y: 0 });
-
   const flowData = useRef({});
 
   const stopFlowView = () => {
-    removeScrollListener();
+    clearInterval(timerRef.current);
     setToggleViewMode(false);
     setTooltip({ value: false });
   };
@@ -384,6 +353,10 @@ function Foreground() {
           : previewStepCount.current.value - 1,
       action: "prev",
     };
+    const { targetUrl } =
+      flowData.current[flowName]["step" + previewStepCount.current.value];
+
+    if (targetUrl === window.location.href) clearInterval(timerRef.current);
     viewFlow(flowName);
   };
 
@@ -396,13 +369,16 @@ function Foreground() {
       action: "next",
     };
 
+    const { targetUrl } =
+      flowData.current[flowName]["step" + previewStepCount.current.value];
+
+    if (targetUrl === window.location.href) clearInterval(timerRef.current);
+
     viewFlow(flowName);
   };
 
   const appendPreviewTooltip = (target, info) => {
     const { message, title, targetClickOffsetX, targetClickOffsetY } = info;
-
-    let scrollableContainer = closestScrollableParent(target);
 
     const tooltipRequisites = {
       title,
@@ -411,44 +387,36 @@ function Foreground() {
       relY: targetClickOffsetY,
     };
 
-    onScrollEnd(scrollableContainer, target, tooltipRequisites, setTooltip);
-
     target.scrollIntoView({
       behavior: "smooth",
       block: "center",
       inline: "nearest",
     });
+
+    onRePosition(target, tooltipRequisites, timerRef, setTooltip);
   };
 
   const addRestriction = (e) => {
-    const target = e.target;
+    disableClick();
     e.preventDefault(); // to stop Focus Events on Target Element
     e.stopPropagation(); // to stop Focus Events on Target Element
-    disableClick();
-    const xPath = getCssSelector(target, {
-      selectors: ["class", "nthoftype", "nthchild"],
-      maxCandidates: 200,
-      maxCombinations: 200,
-    });
+    const target = e.target;
+    const cssSelector = getCssSelector(target);
     targetElem.current = {
-      xPath,
+      cssSelector,
       tagName: target.tagName,
     };
-    prevCord.x = 0;
-    prevCord.y = 0;
-    appendTooltip(e);
     setInit(false);
+    appendTooltip(e);
     window.currentTarget.removeEventListener("pointerdown", addRestriction);
   };
 
   const handleHoverInpect = (e) => {
-    const target = e.target;
+    document.body.style.cursor = "crosshair";
+
+    let target = e.target;
 
     if (!target.tagName) return;
-
-    let { pos, top, left, width, height } = getTargetPosition(target);
-
-    if (prevCord.x === left && prevCord.y === top) return;
 
     if (window.currentTarget && target !== window.currentTarget) {
       window.currentTarget.removeEventListener("pointerdown", addRestriction);
@@ -456,8 +424,7 @@ function Foreground() {
 
     window.currentTarget = target;
 
-    prevCord.x = left;
-    prevCord.y = top;
+    let { pos, top, left, width, height } = getTargetPosition(target);
 
     let translateX = "-3px";
     let translateY = 0;
@@ -491,12 +458,11 @@ function Foreground() {
       tagName: target.tagName,
     });
 
-    target.addEventListener("pointerdown", addRestriction, false); // to prevent target element onClick handler while inspecting
+    target.addEventListener("pointerdown", addRestriction, false);
   };
 
   const appendTooltip = (e) => {
     const target = e.target;
-    const scrollableContainer = closestScrollableParent(target);
     const { top, left, width, height, pos } = getTargetPosition(target);
     const { relX, relY } = getTargetClickPosition(e, top, left, width, height);
     const tooltip_requisites = {
@@ -504,7 +470,7 @@ function Foreground() {
       relY,
     };
     setBox({ value: false });
-    onScrollEnd(scrollableContainer, target, tooltip_requisites, setTooltip);
+    onRePosition(target, tooltip_requisites, timerRef, setTooltip);
   };
 
   const handleLogout = () => {
@@ -546,9 +512,10 @@ function Foreground() {
   };
 
   const handleRemoveHoverInpect = (e) => {
-    window.currentTarget.removeEventListener("pointerdown", addRestriction);
-    enableClick();
     if (e.code === "Escape") {
+      document.body.style.cursor = "auto";
+      window.currentTarget.removeEventListener("pointerdown", addRestriction);
+      enableClick();
       chrome.storage.sync.set({
         flowData: flowData.current,
         stepsCount: stepsCount.current,
@@ -613,23 +580,17 @@ function Foreground() {
   }
 
   const findTarget = (targetInfo) => {
-    let { tagName, xPath } = targetInfo;
-    const delay = 200;
+    let { cssSelector } = targetInfo;
+    const delay = 50;
     return new Promise((resolve, reject) => {
       let cummulativeDelay = 0;
       const a = () => {
-        // let elements = Array.from(
-        //   document.body.querySelectorAll(tagName.toLowerCase())
-        // );
-
-        let target = document.querySelector(xPath);
-
+        let target = document.querySelector(cssSelector);
         if (!target) {
-          if (cummulativeDelay >= 100000) {
+          if (cummulativeDelay >= 20000) {
             reject("Failed to find target!");
           } else {
             setTimeout(() => {
-              console.log("Searching for target");
               cummulativeDelay += delay;
               target = a();
             }, delay);
@@ -849,6 +810,7 @@ function Foreground() {
   };
 
   const handlePageChange = (taskName) => {
+    clearInterval(timerRef.current);
     chrome.storage.sync.set({
       flowData: flowData.current,
       flowName: taskName,
@@ -880,7 +842,7 @@ function Foreground() {
       flowData.current[applicationTaskFlowUseCase]["step" + task.stepNumber] = {
         targetElement: {
           tagName: task.htmlTag,
-          xPath: task.xPath,
+          cssSelector: task.xPath,
         },
         message: task.taskMessage,
         targetUrl: task.targetURL,
@@ -958,10 +920,10 @@ function Foreground() {
   useEffect(() => {
     if (init) {
       document.body.addEventListener("keydown", handleRemoveHoverInpect);
-      document.body.addEventListener("pointermove", handleHoverInpect);
+      document.body.addEventListener("pointerover", handleHoverInpect);
       return () => {
         document.body.removeEventListener("keydown", handleRemoveHoverInpect);
-        document.body.removeEventListener("pointermove", handleHoverInpect);
+        document.body.removeEventListener("pointerover", handleHoverInpect);
       };
     }
   }, [init]);
@@ -1048,7 +1010,7 @@ function Foreground() {
                   initFlowCreation(true);
                 }}
               >
-                Create New Flow
+                <GoTools /> <span>New Flow</span>
               </Button>
             )}
             {stepsCount.current > 0 &&
@@ -1071,7 +1033,7 @@ function Foreground() {
               primary
               onClick={() => setToggleFeddback(true)}
             >
-              <GoCommentDiscussion />
+              <GoThumbsup />
             </Button>
           </FlexBox>
         </Settings>
@@ -1086,7 +1048,7 @@ function Foreground() {
           >
             <FormHeading>Create Flow</FormHeading>
             <InputBox>
-              <Icon as={MdOutlineAppRegistration} />
+              <Icon as={GrBraille} />
               <Input
                 placeholder="Application name..."
                 onChange={(e) => setApplicationName(e.target.value)}
@@ -1096,7 +1058,7 @@ function Foreground() {
             </InputBox>
 
             <InputBox>
-              <Icon as={RiPencilFill} />
+              <Icon as={GrEdit} />
               <Input
                 placeholder="Flow use case..."
                 onChange={(e) => setFlowName(e.target.value)}
@@ -1172,7 +1134,7 @@ function Foreground() {
               disableClick,
               enableClick,
               setInit,
-              removeScrollListener,
+              timerRef,
             }}
           >
             <Arrow style={{ ...showTooltip.arrowPos }}></Arrow>

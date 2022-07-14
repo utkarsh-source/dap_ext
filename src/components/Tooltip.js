@@ -31,7 +31,7 @@ const Tooltip = (props) => {
     setProgress,
     enableClick,
     setInit,
-    removeScrollListener,
+    timerRef,
     children,
   } = props;
 
@@ -52,8 +52,8 @@ const Tooltip = (props) => {
       toast.error("No fields can be empty!");
       return;
     }
+    clearInterval(timerRef.current);
     stepsCount.current++;
-    removeScrollListener();
     setToggleViewMode(false);
     enableClick();
     setInit(true);
@@ -88,7 +88,7 @@ const Tooltip = (props) => {
       toast.error("No fields can be empty!");
       return;
     }
-    removeScrollListener();
+    clearInterval(timerRef.current);
     enableClick();
     stepsCount.current++;
     setInit(true);
@@ -107,53 +107,51 @@ const Tooltip = (props) => {
   };
 
   const handleDismisTooltip = () => {
+    clearInterval(timerRef.current);
     enableClick();
     setInit(true);
     setTooltip({ value: false });
     targetElem.current = null;
-    removeScrollListener();
   };
 
   return (
-    <PopupWrapper toggle={true}>
-      <TooltipBox
-        style={{
-          top: top + "px",
-          left: left + "px",
-          transform: `translate(${translateX}%, ${translateY}%)`,
-        }}
-      >
-        <ButtonRounded
-          style={{ position: "absolute", top: "15px", right: "15px" }}
-          as={CgClose}
-          onClick={handleDismisTooltip}
-        />
-        <input
-          placeholder="Title"
-          value={data.title}
-          onChange={(e) =>
-            setData((prev) => ({ ...prev, title: e.target.value }))
-          }
-          type="text"
-        />
-        <textarea
-          value={data.message}
-          placeholder="Description..."
-          onChange={(e) =>
-            setData((prev) => ({ ...prev, message: e.target.value }))
-          }
-        />
-        <ButtonWrapper>
-          <Button primary onClick={submitData}>
-            Done
-          </Button>
-          <Button onClick={handleNextStep}>
-            Next <FaAngleRight />
-          </Button>
-        </ButtonWrapper>
-        {children}
-      </TooltipBox>
-    </PopupWrapper>
+    <TooltipBox
+      style={{
+        top: top + "px",
+        left: left + "px",
+        transform: `translate(${translateX}%, ${translateY}%)`,
+      }}
+    >
+      <ButtonRounded
+        style={{ position: "absolute", top: "15px", right: "15px" }}
+        as={CgClose}
+        onClick={handleDismisTooltip}
+      />
+      <input
+        placeholder="Title"
+        value={data.title}
+        onChange={(e) =>
+          setData((prev) => ({ ...prev, title: e.target.value }))
+        }
+        type="text"
+      />
+      <textarea
+        value={data.message}
+        placeholder="Description..."
+        onChange={(e) =>
+          setData((prev) => ({ ...prev, message: e.target.value }))
+        }
+      />
+      <ButtonWrapper>
+        <Button primary onClick={() => {}}>
+          Done
+        </Button>
+        <Button onClick={handleNextStep}>
+          Next <FaAngleRight />
+        </Button>
+      </ButtonWrapper>
+      {children}
+    </TooltipBox>
   );
 };
 

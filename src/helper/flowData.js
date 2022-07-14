@@ -7,7 +7,7 @@ export const getFlowData = (data, flowName, applicationName) => {
       title: data[flowName][key].title,
       taskMessage: data[flowName][key].message,
       htmlTag: data[flowName][key].targetElement.tagName,
-      xPath: data[flowName][key].targetElement.xPath,
+      xPath: data[flowName][key].targetElement.cssSelector,
       targetURL: data[flowName][key].targetUrl,
       targetClickOffsetX: data[flowName][key].targetClickOffsetX,
       targetClickOffsetY: data[flowName][key].targetClickOffsetY,

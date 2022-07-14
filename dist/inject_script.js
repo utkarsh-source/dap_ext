@@ -176,6 +176,6 @@ window.dapExtensionCore = {
   },
 };
 
-// if () {
-// }
-document.documentElement.append(window.dapExtensionCore.foreground);
+setTimeout(() => {
+  document.documentElement.append(window.dapExtensionCore.foreground);
+});

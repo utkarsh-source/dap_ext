@@ -69,15 +69,13 @@ export const ButtonWrapper = styled.div`
 
 export const Button = styled.button`
   border-radius: 4px;
-  /* background-color: ${(props) =>
-    props.primary ? theme.waterBlue : "#fafafa"}; */
   background-color: ${(props) => (props.primary ? theme.waterBlue : "white")};
   color: ${(props) => (props.primary ? "white" : "black")};
   font-weight: lighter;
   border: ${(props) =>
     props.primary
       ? `1px solid ${theme.waterBlue}`
-      : `1px solid ${theme.lightGray}`};
+      : `1px solid ${theme.lightBlack}`};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -437,7 +435,7 @@ export const TooltipBox = styled.div`
   padding: 10px;
   position: fixed;
   min-width: 350px;
-  filter: drop-shadow(0 0 20px rgba(0 0 0 / 0.09));
+  filter: drop-shadow(0 0 50px rgba(0 0 0 / 0.2));
   pointer-events: auto;
   & > input {
     font-size: 20px;
@@ -472,7 +470,7 @@ export const PreviewTooltip = styled.div`
   border-radius: 5px;
   padding: 15px;
   min-width: 350px;
-  box-shadow: ${(props) => theme.shadow};
+  filter: drop-shadow(0 0 50px rgba(0 0 0 / 0.2));
   & > p {
     font-size: 20px;
     color: gray;
@@ -489,8 +487,8 @@ export const HoverHighlighter = styled.div`
   --padding: 3px;
   position: fixed;
   pointer-events: none;
-  background-color: #f70776;
-  opacity: 0.3;
+  background-color: ${(props) => theme.waterBlue};
+  opacity: 0.4;
   border-radius: 1px;
   padding: var(--padding);
   box-sizing: content-box !important;
@@ -521,7 +519,7 @@ export const ToastBox = styled.div`
     justify-content: space-between;
     background-color: white;
     overflow: hidden;
-    border-left: 3px solid ${(props) => theme.waterBlue};
+    border-left: 6px solid ${(props) => theme.waterBlue};
   }
 `;
 
