@@ -1,12 +1,19 @@
 chrome.action.onClicked.addListener(onExtensionClick);
+
+function onCommitted() {
+  console.log("");
+}
+
 function removeListeners() {
   chrome.tabs.onRemoved.removeListener(onTabRemove);
   chrome.tabs.onUpdated.removeListener(onTabUpdate);
+  chrome.webNavigation.onHistoryStateUpdated.removeListener(onCommitted);
 }
 
 function addListeners() {
   chrome.tabs.onRemoved.addListener(onTabRemove);
   chrome.tabs.onUpdated.addListener(onTabUpdate);
+  chrome.webNavigation.onCommitted.addListener(onCommitted);
 }
 
 chrome.runtime.onConnect.addListener(function (port) {

@@ -25,6 +25,7 @@ import { toast } from "react-hot-toast";
 import {
   RiArrowGoBackFill as Left,
   RiArrowGoForwardFill as Right,
+  RiContactsBookLine,
   RiDeleteBin6Line,
   RiPencilFill,
 } from "react-icons/ri";
@@ -63,6 +64,7 @@ import {
 } from "../styled-component";
 import PreviewDescriptionTooltip from "./PreviewTooltip";
 import { getCssSelector } from "css-selector-generator";
+import { trapFocus } from "./utils/trapFocus";
 
 function calculateTooltipPosition(target, tooltipRequisites) {
   const { top, left, width, height, pos } = getTargetPosition(target);
@@ -263,7 +265,7 @@ const getArrowPosition = (targetPos) => {
 
 const getTargetPosition = (element) => {
   let pos = [];
-  let [OfTop, OfLeft, OfRight, OfBottom] = [50, 200, 200, 50];
+  let [OfTop, OfLeft, OfRight, OfBottom] = [50, 200, 200, 200];
   let { top, left, width, height } = element.getBoundingClientRect();
   if (top <= OfTop) {
     pos.push("top");
@@ -324,9 +326,9 @@ function Foreground() {
   const [toggleAnnouncement, setToggleAnnouncement] = useState(false);
   const [toggleViewMode, setToggleViewMode] = useState(false);
 
-  const iframeRef = useRef();
-
   const timerRef = useRef(null);
+
+  const popupRef = useRef();
 
   const previewStepCount = useRef({ value: 1 });
 
@@ -556,6 +558,7 @@ function Foreground() {
   };
 
   const initFlowCreation = (value) => {
+    trapFocus(popupRef.current);
     setToggleViewMode(false);
     setToggleCreateFlowPopup(value);
     setTooltip({ value: false });
@@ -581,11 +584,11 @@ function Foreground() {
 
   const findTarget = (targetInfo) => {
     let { cssSelector } = targetInfo;
-    const delay = 50;
+    const delay = 100;
     return new Promise((resolve, reject) => {
       let cummulativeDelay = 0;
       const a = () => {
-        let target = document.querySelector(cssSelector);
+        let target = document.body.querySelector(cssSelector);
         if (!target) {
           if (cummulativeDelay >= 20000) {
             reject("Failed to find target!");
@@ -605,19 +608,20 @@ function Foreground() {
     });
   };
 
-  const viewFlow = (taskName) => {
+  const viewFlow = (taskName, bypassUrlCheck = false) => {
     const { targetUrl, targetElement } =
       flowData.current[taskName]["step" + previewStepCount.current.value];
 
     if (isCurrentDomain(targetUrl)) {
-      if (targetUrl === window.location.href) {
+      if (bypassUrlCheck || targetUrl === window.location.href) {
         findTarget(targetElement)
           .then((target) => {
             target.style.pointerEvents = "auto";
-
             target.addEventListener("pointerdown", onTargetClicked);
-
-            const onTargetClicked = (e) => {
+            function onTargetClicked(e) {
+              target.removeEventListener("pointerdown", onTargetClicked);
+              if (["INPUT", "TEXTAREA"].includes(target.tagName)) return;
+              setTooltip({ value: false });
               if (previewStepCount.current === stepsCount.current) {
                 disableClick();
                 toast(
@@ -642,7 +646,6 @@ function Foreground() {
                   }
                 );
                 setToggleViewMode(false);
-                // setTooltip({ value: false });
               } else {
                 previewStepCount.current = {
                   value:
@@ -651,6 +654,8 @@ function Foreground() {
                       : previewStepCount.current.value + 1,
                   action: "next",
                 };
+
+                viewFlow(taskName, true);
 
                 chrome.storage.sync.set({
                   flowData: flowData.current,
@@ -663,9 +668,7 @@ function Foreground() {
                   toggleViewMode: true,
                 });
               }
-
-              target.removeEventListener("pointerdown", onTargetClicked);
-            };
+            }
 
             const info =
               flowData.current[taskName][
@@ -712,7 +715,6 @@ function Foreground() {
                   <button
                     onClick={() => {
                       enableClick();
-                      setToggleViewMode(false);
                       switch (previewStepCount.current.action) {
                         case "prev": {
                           previewStepCount.current = {
@@ -831,7 +833,6 @@ function Foreground() {
 
   const viewExistingFlow = (flow) => {
     setShowExistingFlow(false);
-
     const { applicationTaskFlowUseCase, taskList } = flow;
 
     setFlowName(applicationTaskFlowUseCase);
@@ -914,8 +915,6 @@ function Foreground() {
       }
     );
   };
-
-  const handleFlowSearch = (e) => {};
 
   useEffect(() => {
     if (init) {
@@ -1040,6 +1039,7 @@ function Foreground() {
 
         <PopupWrapper toggle={toggleCreateFlowPopup}>
           <FormBox
+            ref={popupRef}
             onSubmit={(e) => {
               e.preventDefault();
               addHoverInspect();
@@ -1051,7 +1051,10 @@ function Foreground() {
               <Icon as={GrBraille} />
               <Input
                 placeholder="Application name..."
-                onChange={(e) => setApplicationName(e.target.value)}
+                data-label="applicationName"
+                onChange={(e) => {
+                  setApplicationName(e.target.value);
+                }}
                 value={applicationName}
                 type="text"
               />
@@ -1061,7 +1064,10 @@ function Foreground() {
               <Icon as={GrEdit} />
               <Input
                 placeholder="Flow use case..."
-                onChange={(e) => setFlowName(e.target.value)}
+                data-label="flowName"
+                onChange={(e) => {
+                  setFlowName(e.target.value);
+                }}
                 value={flowName}
                 type="text"
               />
@@ -1150,7 +1156,7 @@ function Foreground() {
           <InputBox height="50px">
             <Icon as={BiSearchAlt} />
             <input
-              onChange={handleFlowSearch}
+              // onChange={handleFlowSearch}
               type="text"
               placeholder="Search flows..."
             />

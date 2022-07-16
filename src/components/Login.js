@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect, useRef } from "react";
 import { AppContext } from "../../AppContext";
 import { login } from "../action/action";
 import { MdEmail } from "react-icons/md";
@@ -14,6 +14,7 @@ import {
   PopupWrapper,
   Ruler,
 } from "../styled-component";
+import { trapFocus } from "./utils/trapFocus";
 
 function Login() {
   const [input, setInput] = useState("");
@@ -21,9 +22,11 @@ function Login() {
 
   const { dispatch } = useContext(AppContext);
 
+  const loginRef = useRef();
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    // chrome.storage.sync.set({ tabInfo: { url: window.location.href } });
+    chrome.storage.sync.set({ tabInfo: { url: window.location.href } });
     const full_domain = input.split("@")[1].split(".");
     const full_domain_length = full_domain.length;
     const main_domain = full_domain[full_domain_length - 2];
@@ -36,9 +39,13 @@ function Login() {
     window.location.reload();
   };
 
+  useEffect(() => {
+    trapFocus(loginRef.current);
+  }, []);
+
   return (
     <PopupWrapper toggle={true}>
-      <FormBox toggle={true} onSubmit={handleSubmit}>
+      <FormBox ref={loginRef} toggle={true} onSubmit={handleSubmit}>
         <FormHeading>Sign In</FormHeading>
         <InputBox>
           <Icon as={MdEmail} />

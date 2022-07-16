@@ -487,7 +487,7 @@ export const HoverHighlighter = styled.div`
   --padding: 3px;
   position: fixed;
   pointer-events: none;
-  background-color: ${(props) => theme.waterBlue};
+  background-color: ${(props) => theme.pink};
   opacity: 0.4;
   border-radius: 1px;
   padding: var(--padding);
