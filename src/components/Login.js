@@ -14,7 +14,7 @@ import {
   PopupWrapper,
   Ruler,
 } from "../styled-component";
-import { trapFocus } from "./utils/trapFocus";
+import { removeFocusTrapListener, trapFocus } from "./utils/trapFocus";
 
 function Login() {
   const [input, setInput] = useState("");
@@ -30,7 +30,7 @@ function Login() {
     const full_domain = input.split("@")[1].split(".");
     const full_domain_length = full_domain.length;
     const main_domain = full_domain[full_domain_length - 2];
-    login(dispatch, main_domain, { email: input, password });
+    login(dispatch, main_domain, { email: input, password }, loginRef.current);
   };
 
   const handleClose = () => {

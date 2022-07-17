@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useRef, useEffect } from "react";
 import { CgClose } from "react-icons/cg";
 import { AppContext } from "../../AppContext";
 import toast from "react-hot-toast";
@@ -12,6 +12,7 @@ import {
   TooltipBox,
 } from "../styled-component";
 import { createFlow } from "../action/action";
+import { removeFocusTrapListener, trapFocus } from "./utils/trapFocus";
 
 const Tooltip = (props) => {
   const {
@@ -46,6 +47,8 @@ const Tooltip = (props) => {
       login: { token, databaseID },
     },
   } = useContext(AppContext);
+
+  const tooltipRef = useRef();
 
   const submitData = () => {
     if (!data.title || !data.message) {
@@ -88,6 +91,7 @@ const Tooltip = (props) => {
       toast.error("No fields can be empty!");
       return;
     }
+    removeFocusTrapListener(tooltipRef.current);
     clearInterval(timerRef.current);
     enableClick();
     stepsCount.current++;
@@ -114,8 +118,13 @@ const Tooltip = (props) => {
     targetElem.current = null;
   };
 
+  useEffect(() => {
+    trapFocus(tooltipRef.current);
+  }, []);
+
   return (
     <TooltipBox
+      ref={tooltipRef}
       style={{
         top: top + "px",
         left: left + "px",

@@ -29,6 +29,7 @@ import {
 import { toast } from "react-hot-toast";
 import { ToastBox, ToastMessage } from "../styled-component";
 import { GoVerified, GoAleart, GoAlert } from "react-icons/go";
+import { removeFocusTrapListener } from "../components/utils/trapFocus";
 
 export const getSavedToken = (dispatch) => {
   dispatch({ type: TOKEN__REQUEST });
@@ -243,7 +244,7 @@ export const viewFeedback = (dispatch, databaseID, token) => {
     });
 };
 
-export const login = (dispatch, databaseID, formData) => {
+export const login = (dispatch, databaseID, formData, loginElement) => {
   dispatch({ type: LOGIN_REQUEST });
   axios
     .post(`/Auth/${databaseID}/Login`, formData)
@@ -262,6 +263,7 @@ export const login = (dispatch, databaseID, formData) => {
         payload: { auth, token, typeOfUser, databaseID },
       });
       chrome.storage.sync.set({ token, auth, typeOfUser, databaseID });
+      removeFocusTrapListener(loginElement);
       toast(
         <ToastBox>
           <div>

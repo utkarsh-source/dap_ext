@@ -64,7 +64,7 @@ import {
 } from "../styled-component";
 import PreviewDescriptionTooltip from "./PreviewTooltip";
 import { getCssSelector } from "css-selector-generator";
-import { trapFocus } from "./utils/trapFocus";
+import { removeFocusTrapListener, trapFocus } from "./utils/trapFocus";
 
 function calculateTooltipPosition(target, tooltipRequisites) {
   const { top, left, width, height, pos } = getTargetPosition(target);
@@ -548,6 +548,7 @@ function Foreground() {
       ));
       return;
     }
+    removeFocusTrapListener(popupRef.current);
     enableClick();
     previewStepCount.current = {
       value: 1,
@@ -918,11 +919,11 @@ function Foreground() {
 
   useEffect(() => {
     if (init) {
-      document.body.addEventListener("keydown", handleRemoveHoverInpect);
-      document.body.addEventListener("pointerover", handleHoverInpect);
+      window.addEventListener("keydown", handleRemoveHoverInpect);
+      window.addEventListener("pointerover", handleHoverInpect);
       return () => {
-        document.body.removeEventListener("keydown", handleRemoveHoverInpect);
-        document.body.removeEventListener("pointerover", handleHoverInpect);
+        window.removeEventListener("keydown", handleRemoveHoverInpect);
+        window.removeEventListener("pointerover", handleHoverInpect);
       };
     }
   }, [init]);
@@ -1079,6 +1080,7 @@ function Foreground() {
                 onClick={() => {
                   enableClick();
                   initFlowCreation(false);
+                  removeFocusTrapListener(popupRef.current);
                 }}
               >
                 Cancel
