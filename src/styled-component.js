@@ -75,13 +75,13 @@ export const Button = styled.button`
   border: ${(props) =>
     props.primary
       ? `1px solid ${theme.waterBlue}`
-      : `1px solid ${theme.lightBlack}`};
+      : `1px solid ${theme.dirtyBlue}`};
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 10px 13px;
   font-size: 14.5px;
-  transition: transform 0.05s ease-out;
+  transition: transform 0.05s;
   flex-grow: 1;
   &:active {
     transform: scale(0.98);
@@ -487,8 +487,8 @@ export const HoverHighlighter = styled.div`
   --padding: 3px;
   position: fixed;
   pointer-events: none;
-  background-color: ${(props) => theme.pink};
-  opacity: 0.4;
+  box-shadow: inset 0px 0px 150px -16px ${(props) => theme.lemonYellow};
+  border: 1px solid ${(props) => theme.lemonYellow};
   border-radius: 1px;
   padding: var(--padding);
   box-sizing: content-box !important;
@@ -593,4 +593,12 @@ export const PreviewBox = styled.div`
     align-self: stretch;
     flex-grow: 1;
   }
+`;
+
+export const HelpLayer = styled.div`
+  position: "fixed";
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: 2px solid red;
 `;

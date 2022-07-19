@@ -10,4 +10,7 @@ export const theme = {
   waterBlue: "#4361ee",
   dirtyGreen: "#49beb7",
   chalk: "#efecec",
+  dirtyBlue: "#0077b6",
+  darkBlue: "#4361ee",
+  lemonYellow: "#fff44f",
 };

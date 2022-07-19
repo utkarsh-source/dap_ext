@@ -47,6 +47,7 @@ import {
   FlowManager,
   FormBox,
   FormHeading,
+  HelpLayer,
   HighlighterTooltip,
   HoverHighlighter,
   Icon,
@@ -339,6 +340,8 @@ function Foreground() {
     tagName: "",
   });
 
+  const highlighterRef = useRef();
+
   const flowData = useRef({});
 
   const stopFlowView = () => {
@@ -399,10 +402,9 @@ function Foreground() {
   };
 
   const addRestriction = (e) => {
+    const target = e.target;
     disableClick();
     e.preventDefault(); // to stop Focus Events on Target Element
-    e.stopPropagation(); // to stop Focus Events on Target Element
-    const target = e.target;
     const cssSelector = getCssSelector(target);
     targetElem.current = {
       cssSelector,
@@ -436,6 +438,7 @@ function Foreground() {
       case "topright":
       case "topleft": {
         translateY = height + 10 + "px";
+        translateY = height + 10 + "px";
         break;
       }
       case "center":
@@ -460,7 +463,13 @@ function Foreground() {
       tagName: target.tagName,
     });
 
-    target.addEventListener("pointerdown", addRestriction, false);
+    if (target.parentElement.tagName === "A") {
+      window.targetParent = target.parentElement;
+      window.targetParentHref = target.parentElement.href;
+      target.parentElement.href = "javascript:void(0)";
+    }
+
+    target.addEventListener("pointerdown", addRestriction);
   };
 
   const appendTooltip = (e) => {
@@ -514,7 +523,7 @@ function Foreground() {
   };
 
   const handleRemoveHoverInpect = (e) => {
-    if (e.code === "Escape") {
+    if (e.key === "Escape") {
       document.body.style.cursor = "auto";
       window.currentTarget.removeEventListener("pointerdown", addRestriction);
       enableClick();
@@ -919,11 +928,11 @@ function Foreground() {
 
   useEffect(() => {
     if (init) {
-      window.addEventListener("keydown", handleRemoveHoverInpect);
-      window.addEventListener("pointerover", handleHoverInpect);
+      document.addEventListener("keydown", handleRemoveHoverInpect);
+      document.addEventListener("pointerover", handleHoverInpect);
       return () => {
-        window.removeEventListener("keydown", handleRemoveHoverInpect);
-        window.removeEventListener("pointerover", handleHoverInpect);
+        document.removeEventListener("keydown", handleRemoveHoverInpect);
+        document.removeEventListener("pointerover", handleHoverInpect);
       };
     }
   }, [init]);
@@ -1095,6 +1104,7 @@ function Foreground() {
       {box.value && (
         <>
           <HoverHighlighter
+            ref={highlighterRef}
             style={{
               top: box.top,
               left: box.left,

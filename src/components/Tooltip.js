@@ -52,15 +52,24 @@ const Tooltip = (props) => {
 
   const submitData = () => {
     if (!data.title || !data.message) {
-      toast.error("No fields can be empty!");
+      toast((tst) => (
+        <ToastBox>
+          <div>
+            <ToastMessage>
+              <GoAlert /> No fields can be empty!
+            </ToastMessage>
+          </div>
+        </ToastBox>
+      ));
       return;
     }
+    enableClick();
+    setProgress({ state: "off" });
+    setToggleViewMode(false);
+    setInit(false);
+    setTooltip({ value: false });
     clearInterval(timerRef.current);
     stepsCount.current++;
-    setToggleViewMode(false);
-    enableClick();
-    setInit(true);
-    setTooltip({ value: false });
     flowData.current[flowName] = {
       ...flowData.current[flowName],
       ["step" + stepsCount.current]: {
@@ -82,15 +91,28 @@ const Tooltip = (props) => {
       "toggleViewMode",
       "init",
     ]);
-    const flowData = getFlowData(flowData.current, flowName, applicationName);
-    createFlow(dispatch, databaseID, token, flowData, setProgress);
+    const flowDataFormat = getFlowData(
+      flowData.current,
+      flowName,
+      applicationName
+    );
+    createFlow(dispatch, databaseID, token, flowDataFormat, setProgress);
   };
 
   const handleNextStep = (e) => {
     if (!data.title || !data.message) {
-      toast.error("No fields can be empty!");
+      toast((tst) => (
+        <ToastBox>
+          <div>
+            <ToastMessage>
+              <GoAlert /> No fields can be empty!
+            </ToastMessage>
+          </div>
+        </ToastBox>
+      ));
       return;
     }
+    window.targetParent.href = window.targetParentHref;
     removeFocusTrapListener(tooltipRef.current);
     clearInterval(timerRef.current);
     enableClick();
@@ -111,6 +133,7 @@ const Tooltip = (props) => {
   };
 
   const handleDismisTooltip = () => {
+    window.targetParent.href = window.targetParentHref;
     clearInterval(timerRef.current);
     enableClick();
     setInit(true);
@@ -152,7 +175,7 @@ const Tooltip = (props) => {
         }
       />
       <ButtonWrapper>
-        <Button primary onClick={() => {}}>
+        <Button primary onClick={submitData}>
           Done
         </Button>
         <Button onClick={handleNextStep}>
